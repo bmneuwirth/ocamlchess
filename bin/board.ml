@@ -10,6 +10,8 @@ type piece = {
 
 type board = piece list
 
+let board_width = 8
+let board_height = 8
 let make_piece piece_type color column row = { piece_type; color; column; row }
 
 let init_pieces color : board =
@@ -35,5 +37,31 @@ let init_pieces color : board =
   ]
 
 let init_board = init_pieces White @ init_pieces Black
-let print_board b = if b = [] then () else print_endline "board"
+let col_char_to_int col = Char.chr (col + Char.code 'A' - 1)
+
+let piece_type_to_char p =
+  match p with
+  | Pawn -> 'P'
+  | Rook -> 'R'
+  | Knight -> 'N'
+  | Bishop -> 'B'
+  | Queen -> 'Q'
+  | King -> 'K'
+
+let get_piece_char b row col =
+  match
+    List.filter (fun x -> x.column = col_char_to_int col && x.row = row) b
+  with
+  | [] -> '.'
+  | piece :: _ -> piece_type_to_char piece.piece_type
+
+let print_board b =
+  for row = 1 to board_height do
+    for col = 1 to board_width do
+      print_char (get_piece_char b row col);
+      if col <> board_width then print_char ' ' else ()
+    done;
+    print_endline ""
+  done
+
 let move board piece c i = raise (Failure "Unimplemented")
