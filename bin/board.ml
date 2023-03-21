@@ -37,8 +37,11 @@ let init_pieces color : board =
   ]
 
 let init_board = init_pieces White @ init_pieces Black
-let col_char_to_int col = Char.chr (col + Char.code 'A' - 1)
 
+(* [col_int_to_char col] returns the character representing the [col]th column. *)
+let col_int_to_char col = Char.chr (col + Char.code 'A' - 1)
+
+(* [piece_type_to_char p] returns the character representing a piece type [p]. *)
 let piece_type_to_char p =
   match p with
   | Pawn -> 'P'
@@ -48,12 +51,18 @@ let piece_type_to_char p =
   | Queen -> 'Q'
   | King -> 'K'
 
+(* [get_piece b row col] returns the piece on board [b] at row [r] and col [c],
+   where row and col are both ints. *)
+let get_piece b row col =
+  List.find_opt (fun x -> x.column = col_int_to_char col && x.row = row) b
+
+(* [get_piece_char b row col] returns the character representing the piece on
+   board b at row r and col c, where row and col are both ints. *)
 let get_piece_char b row col =
-  match
-    List.filter (fun x -> x.column = col_char_to_int col && x.row = row) b
-  with
-  | [] -> '.'
-  | piece :: _ -> piece_type_to_char piece.piece_type
+  let piece_opt = get_piece b row col in
+  match piece_opt with
+  | None -> '.'
+  | Some piece -> piece_type_to_char piece.piece_type
 
 let print_board b =
   for row = 1 to board_height do
