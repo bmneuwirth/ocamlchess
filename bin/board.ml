@@ -140,7 +140,7 @@ let check_rook_move piece c i =
   piece_type Queen to row [r] and column [c] is legal or not. Returns true if 
     legal, false if not. *)
 let check_queen_move piece c i =
-  check_bishop_move piece c i && check_rook_move piece c i
+  check_bishop_move piece c i || check_rook_move piece c i
 
 (** [check_king_move piece c i] is a bool that checks if moving [piece] of 
   piece_type King to row [r] and column [c] is legal or not. Returns true if 
