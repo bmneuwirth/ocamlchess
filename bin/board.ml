@@ -84,9 +84,8 @@ let print_board b =
 let check_pawn_move piece c i =
   if
     (c = piece.column && (i = piece.row + 1 || i = piece.row + 2))
-    || i = piece.row
-       && (c = Char.chr (Char.code piece.column + 1)
-          || c = Char.chr (Char.code piece.column - 1))
+    || (i = piece.row && c = Char.chr (Char.code piece.column + 1))
+    || c = Char.chr (Char.code piece.column - 1)
   then true
   else false
 
@@ -165,5 +164,27 @@ let rec check_piece_on_board (board : board) (piece : piece) (c : char)
       find_piece_type board piece c i
   | _ :: t -> check_piece_on_board t piece c i
 
-let move board piece c i =
-  if check_piece_on_board board piece c i then add_move_to_board board
+exception NotFound
+
+(** [check_if_occupied board c i ] is a boolean that returns whether the square 
+represented by column [c] and row [i] is currently occupied (another piece is on
+the square represented by column [c] and row [i]). Returns true if occupied, 
+  false if not *)
+let check_if_occupied (board : board) (c : char) (i : int) : bool =
+  match get_piece board (Char.code c - 40) i with
+  | Some piece -> true
+  | None -> false
+
+let move (board : board) (piece : piece) (c : char) (i : int) : board option =
+  if check_piece_on_board board piece c i && check_if_occupied board c i then
+    Some
+      (make_piece piece.piece_type piece.color c i
+      :: remove_piece
+           (remove_piece board i (Char.code c - 40))
+           piece.row
+           (Char.code piece.column - 40))
+  else if check_piece_on_board board piece c i then
+    Some
+      (make_piece piece.piece_type piece.color c i
+      :: remove_piece board piece.row (Char.code piece.column - 40))
+  else None
