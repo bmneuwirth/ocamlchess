@@ -15,8 +15,8 @@ let board_height = 8
 let make_piece piece_type color column row = { piece_type; color; column; row }
 
 let init_pieces color : board =
-  let pawn_start = if color = White then 7 else 2 in
-  let back_start = if color = White then 8 else 1 in
+  let pawn_start = if color = White then 2 else 7 in
+  let back_start = if color = White then 1 else 8 in
   [
     make_piece Pawn color 'A' pawn_start;
     make_piece Pawn color 'B' pawn_start;
@@ -41,6 +41,9 @@ let init_board = init_pieces White @ init_pieces Black
 (** [col_int_to_char col] returns the character representing the [col]th column. *)
 let col_int_to_char col = Char.chr (col + Char.code 'A' - 1)
 
+(** [col_char_to_int col] returns the int representing column [col]. *)
+let col_char_to_int col = Char.code col - Char.code 'A' + 1
+
 (** [piece_type_to_char p] returns the character representing a piece type [p]. *)
 let piece_type_to_char p =
   match p with
@@ -51,43 +54,63 @@ let piece_type_to_char p =
   | Queen -> 'Q'
   | King -> 'K'
 
-(** [get_piece b row col] returns the piece on board [b] at row [r] and col [c],
-   where row and col are both ints. *)
-let get_piece b row col =
-  List.find_opt (fun x -> x.column = col_int_to_char col && x.row = row) b
+(** [get_piece b col row] returns the piece on board [b] at row [r] and col [c],
+   where row is a int and col is a char. *)
+let get_piece b col row =
+  List.find_opt (fun x -> x.column = col && x.row = row) b
 
-(** [remove_piece b row col] returns the board [b] with the piece at row [r] and 
+(** [remove_piece b col row] returns the board [b] with the piece at row [r] and 
 col [c] removed. *)
-let remove_piece b row col =
-  List.filter (fun x -> not (x.column = col_int_to_char col && x.row = row)) b
+let remove_piece b col row =
+  List.filter (fun x -> not (x.column = col && x.row = row)) b
 
-(** [get_piece_char b row col] returns the character representing the piece on
+(** [print_piece_char b col row] prints the character representing the piece on
    board b at row r and col c, where row and col are both ints. *)
-let get_piece_char b row col =
-  let piece_opt = get_piece b row col in
+let print_piece_char b col row =
+  let piece_opt = get_piece b col row in
   match piece_opt with
-  | None -> '.'
-  | Some piece -> piece_type_to_char piece.piece_type
+  | None -> print_char '.'
+  | Some piece ->
+      let color =
+        if piece.color = White then [ ANSITerminal.white ]
+        else [ ANSITerminal.black ]
+      in
+      ANSITerminal.print_string color
+        (String.make 1 (piece_type_to_char piece.piece_type))
 
 let print_board b =
-  for row = 1 to board_height do
+  print_char '\n';
+  for row = board_height downto 1 do
+    ANSITerminal.print_string [ ANSITerminal.green ] (string_of_int row);
+    print_char ' ';
     for col = 1 to board_width do
-      print_char (get_piece_char b row col);
+      print_piece_char b (col_int_to_char col) row;
       if col <> board_width then print_char ' ' else ()
     done;
     print_endline ""
-  done
+  done;
+  print_string "  ";
+  for col = 1 to board_width do
+    ANSITerminal.print_string [ ANSITerminal.green ]
+      (String.make 1 (col_int_to_char col));
+    if col <> board_width then print_char ' ' else ()
+  done;
+  print_endline ""
 
 (** [check_pawn_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Pawn to row [r] and column [c] is legal or not. Returns true if 
-    legal, false if not. *)
+    legal, false if not. 
+      
+      TODO: Only white pawns work right. *)
 let check_pawn_move piece c i =
-  if
-    (c = piece.column && (i = piece.row + 1 || i = piece.row + 2))
-    || (i = piece.row && c = Char.chr (Char.code piece.column + 1))
-    || c = Char.chr (Char.code piece.column - 1)
-  then true
-  else false
+  (piece.color = White && c = piece.column
+   && (i = piece.row + 1 || i = piece.row + 2)
+  || (i = piece.row && c = Char.chr (Char.code piece.column + 1))
+  || c = Char.chr (Char.code piece.column - 1))
+  || piece.color = Black && c = piece.column
+     && (i = piece.row - 1 || i = piece.row - 2)
+  || (i = piece.row && c = Char.chr (Char.code piece.column + 1))
+  || c = Char.chr (Char.code piece.column - 1)
 
 (** [check_knight_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Knight to row [r] and column [c] is legal or not. Returns true if 
@@ -164,27 +187,33 @@ let rec check_piece_on_board (board : board) (piece : piece) (c : char)
       find_piece_type board piece c i
   | _ :: t -> check_piece_on_board t piece c i
 
-exception NotFound
-
 (** [check_if_occupied board c i ] is a boolean that returns whether the square 
 represented by column [c] and row [i] is currently occupied (another piece is on
 the square represented by column [c] and row [i]). Returns true if occupied, 
   false if not *)
 let check_if_occupied (board : board) (c : char) (i : int) : bool =
-  match get_piece board (Char.code c - 40) i with
-  | Some piece -> true
-  | None -> false
+  match get_piece board c i with Some piece -> true | None -> false
 
-let move (board : board) (piece : piece) (c : char) (i : int) : board option =
-  if check_piece_on_board board piece c i && check_if_occupied board c i then
-    Some
-      (make_piece piece.piece_type piece.color c i
-      :: remove_piece
-           (remove_piece board i (Char.code c - 40))
-           piece.row
-           (Char.code piece.column - 40))
-  else if check_piece_on_board board piece c i then
-    Some
-      (make_piece piece.piece_type piece.color c i
-      :: remove_piece board piece.row (Char.code piece.column - 40))
+let move_piece (board : board) (piece : piece) (col : char) (row : int) :
+    board option =
+  if check_piece_on_board board piece col row then
+    let new_piece = { piece with column = col; row } in
+    let board_without_piece = remove_piece board piece.column piece.row in
+    match get_piece board col row with
+    | None -> Some (new_piece :: board_without_piece)
+    | Some captured_piece ->
+        Some
+          (new_piece
+          :: remove_piece board_without_piece captured_piece.column
+               captured_piece.row)
   else None
+
+(* TODO: Add exception type for invalid moves? *)
+(* TODO: Pieces can capture pieces of same color *)
+let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int) :
+    board option =
+  match get_piece board c1 i1 with
+  | Some p ->
+      let piece = p in
+      move_piece board piece c2 i2
+  | None -> None
