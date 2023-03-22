@@ -20,10 +20,10 @@ val init_board : board
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
 
-val move : board -> piece_type -> char -> int -> board option
-(** [move board piece_type c i] returns a board after applying the given move.
-    The move is represented by [piece_type c i], where piece_type is the piece type
-    to be moved, c is the letter representing the column to move to, and i is 
+val move : board -> char -> int -> char -> int -> board option
+(** [move board c1 i1 c2 i2] returns a board after applying the given move.
+    The move is represented by [c1 i1 c2 i2], where c1i1 is the location of the
+    piece to move, c2 is the letter representing the column to move to, and i2 is 
     the int representing the row to move to. 
     
     If the move is invalid, [None] is returned, and if the move is valid, 
