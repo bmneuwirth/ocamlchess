@@ -97,68 +97,60 @@ let print_board b =
   done;
   print_endline ""
 
+(** [next_col col] gets the column to the right of [col]. *)
+let next_col col = col_int_to_char (col_char_to_int col + 1)
+
+(** [prev_col col] gets the column to the left of [col]. *)
+let prev_col col = col_int_to_char (col_char_to_int col - 1)
+
 (** [check_pawn_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Pawn to row [r] and column [c] is legal or not. Returns true if 
-    legal, false if not. 
-      
-      TODO: Only white pawns work right. *)
+    legal, false if not. *)
 let check_pawn_move piece c i =
-  (piece.color = White && c = piece.column
-   && (i = piece.row + 1 || i = piece.row + 2)
-  || (i = piece.row && c = Char.chr (Char.code piece.column + 1))
-  || c = Char.chr (Char.code piece.column - 1))
+  piece.color = White && c = piece.column
+  && (i = piece.row + 1 || (piece.row = 2 && i = piece.row + 2))
   || piece.color = Black && c = piece.column
-     && (i = piece.row - 1 || i = piece.row - 2)
-  || (i = piece.row && c = Char.chr (Char.code piece.column + 1))
-  || c = Char.chr (Char.code piece.column - 1)
+     && (i = piece.row - 1 || (piece.row = 7 && i = piece.row - 2))
 
 (** [check_knight_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Knight to row [r] and column [c] is legal or not. Returns true if 
     legal, false if not. *)
 let check_knight_move piece c i =
-  if
-    (i = piece.row + 1 || i = piece.row - 1)
-    && (c = Char.chr (Char.code piece.column + 2)
-       || c = Char.chr (Char.code piece.column - 2))
-  then true
-  else false
+  ((i = piece.row + 1 || i = piece.row - 1)
+   && c = next_col (next_col piece.column)
+  || c = prev_col (prev_col piece.column))
+  || ((i = piece.row + 2 || i = piece.row - 2) && c = next_col piece.column)
+  || c = prev_col piece.column
 
 (** [check_bishop_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Bishop to row [r] and column [c] is legal or not. Returns true if 
     legal, false if not. *)
 let check_bishop_move piece c i =
-  if Char.code c - Char.code piece.column = i - piece.row then true else false
+  abs (col_char_to_int c - col_char_to_int piece.column) = abs (i - piece.row)
 
 (** [check_rook_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Rook to row [r] and column [c] is legal or not. Returns true if 
     legal, false if not. *)
 let check_rook_move piece c i =
-  if
-    (Char.code c - Char.code piece.column = 0 && Int.abs (i - piece.row) > 0)
-    || (i - piece.row = 0 && Int.abs (Char.code c - Char.code piece.column) > 0)
-  then true
-  else false
+  (c = piece.column && Int.abs (i - piece.row) > 0)
+  || i = piece.row
+     && Int.abs (col_char_to_int c - col_char_to_int piece.column) > 0
 
 (** [check_queen_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Queen to row [r] and column [c] is legal or not. Returns true if 
     legal, false if not. *)
 let check_queen_move piece c i =
-  if check_bishop_move piece c i && check_rook_move piece c i then true
-  else false
+  check_bishop_move piece c i && check_rook_move piece c i
 
 (** [check_king_move piece c i] is a bool that checks if moving [piece] of 
   piece_type King to row [r] and column [c] is legal or not. Returns true if 
     legal, false if not. *)
 let check_king_move piece c i =
-  if
-    c = Char.chr (Char.code piece.column)
-    && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
-    || c = Char.chr (Char.code piece.column + 1)
-       && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
-    || c = Char.chr (Char.code piece.column - 1)
-       && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
-  then true
-  else false
+  (c = piece.column && (i = piece.row + 1 || i = piece.row - 1))
+  || c = next_col piece.column
+     && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
+  || c = prev_col piece.column
+     && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
 
 (** [find_piece_type board piece c i] finds what type the [piece] is and calls 
 function to check if moving [piece] to column [c] and row [i] is valid based on
@@ -202,10 +194,12 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int) :
     match get_piece board col row with
     | None -> Some (new_piece :: board_without_piece)
     | Some captured_piece ->
-        Some
-          (new_piece
-          :: remove_piece board_without_piece captured_piece.column
-               captured_piece.row)
+        if captured_piece.color = piece.color then None
+        else
+          Some
+            (new_piece
+            :: remove_piece board_without_piece captured_piece.column
+                 captured_piece.row)
   else None
 
 (* TODO: Add exception type for invalid moves? *)
