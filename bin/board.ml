@@ -59,6 +59,9 @@ let piece_type_to_char p =
 let get_piece b col row =
   List.find_opt (fun x -> x.column = col && x.row = row) b
 
+let get_piece_color b col row =
+  match get_piece b col row with Some p -> Some p.color | None -> None
+
 (** [remove_piece b col row] returns the board [b] with the piece at row [r] and 
 col [c] removed. *)
 let remove_piece b col row =

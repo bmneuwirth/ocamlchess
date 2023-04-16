@@ -17,6 +17,9 @@ type board
 val init_board : board
 (** [init_board] returns the initial chess board at the start of a game. *)
 
+val get_piece_color : board -> char -> int -> color option
+(** [get_piece_color board col row] gets the color of the piece at position (col, row), or none if there is no piece there. *)
+
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
 
