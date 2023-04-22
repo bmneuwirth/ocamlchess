@@ -1,20 +1,27 @@
 open Board
 
-type state = board * color
+type state = { board : board; color : color; can_castle : bool }
 
-let init_state = (Board.init_board, White)
+let init_state = { board = Board.init_board; color = White; can_castle = true }
 
-let move (board, color) start_col start_row end_col end_row =
+let move cur_state start_col start_row end_col end_row =
+  let { board; color = cur_color; _ } = cur_state in
   match Board.get_piece_color board start_col start_row with
   | Some c -> (
-      if c <> color then None
+      if c <> cur_color then None
       else
         match Board.move board start_col start_row end_col end_row with
-        | Some board -> Some (board, if color = Black then White else Black)
+        | Some board ->
+            Some
+              {
+                cur_state with
+                board;
+                color = (if cur_color = Black then White else Black);
+              }
         | None -> None)
   | None -> None
 
-let print_command (board, color) =
+let print_command { board; color; _ } =
   let _ =
     match color with
     | White -> ANSITerminal.print_string [ ANSITerminal.white ] "White's turn. "
