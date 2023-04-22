@@ -11,14 +11,27 @@ type piece_type =
   | King
       (** The type [piece_type] represents the type of a particular piece. *)
 
+type piece = {
+  piece_type : piece_type;
+  color : color;
+  column : char;
+  row : int;
+}
+(** The type [piece] represents a particular piece on the board. *)
+
 type board
 (** The type [board] represents the state of the chess board. *)
 
 val init_board : board
 (** [init_board] returns the initial chess board at the start of a game. *)
 
+val get_piece : board -> char -> int -> piece option
+(** [get_piece b col row] returns the piece on board [b] at row [r] and col [c],
+   where row is a int and col is a char. *)
+
 val get_piece_color : board -> char -> int -> color option
-(** [get_piece_color board col row] gets the color of the piece at position (col, row), or none if there is no piece there. *)
+(** [get_piece_color board col row] returns [Some color] if there is a piece at 
+    position (col, row) with color [color], or [None] if there is no piece there. *)
 
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)

@@ -1,6 +1,11 @@
 open Board
 
-type state = { board : board; color : color; can_castle : bool }
+type state = {
+  board : board;
+  color : color;
+  can_castle_left : bool;
+  can_castle_right : bool;
+}
 
 val init_state : state
 (** [init_state] is the initial state of the game. *)
