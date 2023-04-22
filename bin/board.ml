@@ -189,9 +189,42 @@ the square represented by column [c] and row [i]). Returns true if occupied,
 let check_if_occupied (board : board) (c : char) (i : int) : bool =
   match get_piece board c i with Some piece -> true | None -> false
 
-let move_piece (board : board) (piece : piece) (col : char) (row : int) :
-    board option =
-  if check_piece_on_board board piece col row then
+let move_piece (board : board) (piece : piece) (col : char) (row : int)
+    (can_castle_left : bool) (can_castle_right : bool) : board option =
+  let initial_king_row = if piece.color = White then 1 else 8 in
+  let initial_king_move =
+    piece.piece_type = King && piece.column = 'E'
+    && piece.row = initial_king_row
+  in
+  if initial_king_move && col = 'C' && row = initial_king_row then
+    let left_rook = Option.get (get_piece board 'A' initial_king_row) in
+    if
+      check_piece_on_board board left_rook 'D' initial_king_row
+      && not (check_if_occupied board 'D' initial_king_row)
+    then
+      let board_without_rook = remove_piece board 'A' initial_king_row in
+      let board_without_pieces =
+        remove_piece board_without_rook 'E' initial_king_row
+      in
+      let new_king = { piece with column = col; row } in
+      let new_rook = { left_rook with column = 'D'; row } in
+      Some (new_king :: new_rook :: board_without_pieces)
+    else None
+  else if initial_king_move && col = 'G' && row = initial_king_row then
+    let right_rook = Option.get (get_piece board 'H' initial_king_row) in
+    if
+      check_piece_on_board board right_rook 'F' initial_king_row
+      && not (check_if_occupied board 'F' initial_king_row)
+    then
+      let board_without_rook = remove_piece board 'H' initial_king_row in
+      let board_without_pieces =
+        remove_piece board_without_rook 'E' initial_king_row
+      in
+      let new_king = { piece with column = col; row } in
+      let new_rook = { right_rook with column = 'F'; row } in
+      Some (new_king :: new_rook :: board_without_pieces)
+    else None
+  else if check_piece_on_board board piece col row then
     let new_piece = { piece with column = col; row } in
     let board_without_piece = remove_piece board piece.column piece.row in
     match get_piece board col row with
@@ -206,11 +239,12 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int) :
   else None
 
 (* TODO: Add exception type for invalid moves? *)
-(* TODO: Pieces can capture pieces of same color *)
-let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int) :
-    board option =
+(* TODO: Castling needs check checker to make sure it's a valid move (check
+   if king is in check on each step of the castle)*)
+let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
+    (can_castle_left : bool) (can_castle_right : bool) : board option =
   match get_piece board c1 i1 with
   | Some p ->
       let piece = p in
-      move_piece board piece c2 i2
+      move_piece board piece c2 i2 can_castle_left can_castle_right
   | None -> None

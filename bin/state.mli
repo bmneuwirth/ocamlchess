@@ -1,10 +1,12 @@
 open Board
 
+type player_state = { can_castle_left : bool; can_castle_right : bool }
+
 type state = {
   board : board;
   color : color;
-  can_castle_left : bool;
-  can_castle_right : bool;
+  white_state : player_state;
+  black_state : player_state;
 }
 
 val init_state : state

@@ -36,11 +36,12 @@ val get_piece_color : board -> char -> int -> color option
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
 
-val move : board -> char -> int -> char -> int -> board option
-(** [move board c1 i1 c2 i2] returns a board after applying the given move.
+val move : board -> char -> int -> char -> int -> bool -> bool -> board option
+(** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.
     The move is represented by [c1 i1 c2 i2], where c1i1 is the location of the
     piece to move, c2 is the letter representing the column to move to, and i2 is 
-    the int representing the row to move to. 
+    the int representing the row to move to. [b1] represents whether the player is allowed
+    to castle left. [b2] represents whether the player is allowed to castle right.
     
     If the move is invalid, [None] is returned, and if the move is valid, 
     [Some new_board] is returned where [new_board] is the updated board. *)
