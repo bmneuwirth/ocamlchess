@@ -22,26 +22,25 @@ let init_state =
 let update_state board cur_state piece =
   let { color = cur_color; black_state; white_state } = cur_state in
   let gen_new_state new_color player_state =
-    {
-      cur_state with
-      board;
-      color = new_color;
-      black_state =
-        {
-          can_castle_left =
-            player_state.can_castle_left && piece.piece_type <> King
-            && not (piece.piece_type = Rook && piece.column = 'A');
-          can_castle_right =
-            player_state.can_castle_right && piece.piece_type <> King
-            && not (piece.piece_type = Rook && piece.column = 'H');
-        };
-    }
+    let new_state = { cur_state with board; color = new_color } in
+    let player_state =
+      {
+        can_castle_left =
+          player_state.can_castle_left && piece.piece_type <> King
+          && not (piece.piece_type = Rook && piece.column = 'A');
+        can_castle_right =
+          player_state.can_castle_right && piece.piece_type <> King
+          && not (piece.piece_type = Rook && piece.column = 'H');
+      }
+    in
+    if new_color = White then { new_state with black_state = player_state }
+    else { new_state with white_state = player_state }
   in
   Some
     (if cur_color = Black then gen_new_state White black_state
     else gen_new_state Black white_state)
 
-let move (cur_state : state) start_col start_row end_col end_row =
+let move start_col start_row end_col end_row (cur_state : state) =
   let { board; color = cur_color; black_state; white_state } = cur_state in
   match Board.get_piece_color board start_col start_row with
   | Some c -> (

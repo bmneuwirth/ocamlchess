@@ -1,3 +1,4 @@
+open Chessmon
 open State
 
 (** [game_loop state] runs the game loop with current state [state] until the command [quit] is received. *)
@@ -10,7 +11,7 @@ let rec game_loop cur_state =
       exit 0
   | Move { start_col; start_row; end_col; end_row } -> (
       let new_state_opt =
-        State.move cur_state start_col start_row end_col end_row
+        State.move start_col start_row end_col end_row cur_state
       in
       match new_state_opt with
       | None -> print_status cur_state "Invalid move.\n"
