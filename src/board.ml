@@ -59,6 +59,9 @@ let piece_type_to_char p =
 let get_piece b col row =
   List.find_opt (fun x -> x.column = col && x.row = row) b
 
+let get_piece_color b col row =
+  match get_piece b col row with Some p -> Some p.color | None -> None
+
 (** [remove_piece b col row] returns the board [b] with the piece at row [r] and 
 col [c] removed. *)
 let remove_piece b col row =
@@ -186,28 +189,61 @@ the square represented by column [c] and row [i]). Returns true if occupied,
 let check_if_occupied (board : board) (c : char) (i : int) : bool =
   match get_piece board c i with Some piece -> true | None -> false
 
-let move_piece (board : board) (piece : piece) (col : char) (row : int) :
-    board option =
-  if check_piece_on_board board piece col row then
-    let new_piece = { piece with column = col; row } in
-    let board_without_piece = remove_piece board piece.column piece.row in
-    match get_piece board col row with
-    | None -> Some (new_piece :: board_without_piece)
-    | Some captured_piece ->
-        if captured_piece.color = piece.color then None
-        else
-          Some
-            (new_piece
-            :: remove_piece board_without_piece captured_piece.column
-                 captured_piece.row)
+let try_castle (board : board) (piece : piece) (col : char) (row : int)
+    (is_left : bool) : board option =
+  let rook_pos = if is_left then 'A' else 'H' in
+  let rook_dest = if is_left then 'D' else 'F' in
+  let initial_king_row = if piece.color = White then 1 else 8 in
+  let rook = Option.get (get_piece board rook_pos initial_king_row) in
+  if
+    check_piece_on_board board rook rook_dest initial_king_row
+    && not (check_if_occupied board rook_dest initial_king_row)
+  then
+    let board_without_rook = remove_piece board rook_pos initial_king_row in
+    let board_without_pieces =
+      remove_piece board_without_rook 'E' initial_king_row
+    in
+    let new_king = { piece with column = col; row } in
+    let new_rook = { rook with column = rook_dest; row } in
+    Some (new_king :: new_rook :: board_without_pieces)
+  else None
+
+let update_board board piece col row =
+  let new_piece = { piece with column = col; row } in
+  let board_without_piece = remove_piece board piece.column piece.row in
+  match get_piece board col row with
+  | None -> Some (new_piece :: board_without_piece)
+  | Some captured_piece ->
+      if captured_piece.color = piece.color then None
+      else
+        Some
+          (new_piece
+          :: remove_piece board_without_piece captured_piece.column
+               captured_piece.row)
+
+let move_piece (board : board) (piece : piece) (col : char) (row : int)
+    (can_castle_left : bool) (can_castle_right : bool) : board option =
+  let initial_king_row = if piece.color = White then 1 else 8 in
+  let initial_king_move =
+    piece.piece_type = King && piece.column = 'E'
+    && piece.row = initial_king_row
+  in
+  if initial_king_move && col = 'C' && row = initial_king_row && can_castle_left
+  then try_castle board piece col row true
+  else if
+    initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
+  then try_castle board piece col row false
+  else if check_piece_on_board board piece col row then
+    update_board board piece col row
   else None
 
 (* TODO: Add exception type for invalid moves? *)
-(* TODO: Pieces can capture pieces of same color *)
-let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int) :
-    board option =
+(* TODO: Castling needs check checker to make sure it's a valid move (check
+   if king is in check on each step of the castle)*)
+let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
+    (can_castle_left : bool) (can_castle_right : bool) : board option =
   match get_piece board c1 i1 with
   | Some p ->
       let piece = p in
-      move_piece board piece c2 i2
+      move_piece board piece c2 i2 can_castle_left can_castle_right
   | None -> None
