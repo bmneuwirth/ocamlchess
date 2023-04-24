@@ -1,5 +1,5 @@
 exception King_not_found
-exception Checkmate
+exception CheckMate
 
 type color =
   | Black
