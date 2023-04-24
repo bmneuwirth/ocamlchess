@@ -39,6 +39,12 @@ val get_piece_color : board -> char -> int -> color option
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
 
+val check_if_occupied : board -> char -> int -> bool
+(** [check_if_occupied board c i ] is a boolean that returns whether the square 
+represented by column [c] and row [i] is currently occupied (another piece is on
+the square represented by column [c] and row [i]). Returns true if occupied, 
+  false if not *)
+
 val move : board -> char -> int -> char -> int -> bool -> bool -> board option
 (** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.
     The move is represented by [c1 i1 c2 i2], where c1i1 is the location of the
