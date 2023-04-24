@@ -1,3 +1,6 @@
+exception King_not_found
+exception Checkmate
+
 type color =
   | Black
   | White  (** The type [color] represents the color of a particular piece. *)
