@@ -64,6 +64,7 @@ let get_piece b col row =
 
 let piece_exists b col row =
   match get_piece b col row with None -> false | Some piece -> true
+
 let get_piece_color b col row =
   match get_piece b col row with Some p -> Some p.color | None -> None
 
@@ -112,7 +113,7 @@ let next_col col = col_int_to_char (col_char_to_int col + 1)
 let prev_col col = col_int_to_char (col_char_to_int col - 1)
 
 (** [check_pawn_move piece b c i] is a bool that checks if moving [piece] of 
-  piece_type Pawn to row [r] and column [c] is legal or not. Returns true if 
+  piece_type Pawn to row [r] and column [c] on board [b] is legal or not. Returns true if 
     legal, false if not. *)
 let check_pawn_move piece b c i =
   piece.color = White
@@ -122,8 +123,13 @@ let check_pawn_move piece b c i =
         && i = piece.row + 1
         && (c = col_int_to_char (col_char_to_int piece.column + 1)
            || c = col_int_to_char (col_char_to_int piece.column - 1)))
-  || piece.color = Black && c = piece.column
-     && (i = piece.row - 1 || (piece.row = 7 && i = piece.row - 2))
+  || piece.color = Black
+     && (i = piece.row - 1
+        || (piece.row = 7 && i = piece.row - 2)
+        || piece_exists b c i
+           && i = piece.row - 1
+           && (c = col_int_to_char (col_char_to_int piece.column + 1)
+              || c = col_int_to_char (col_char_to_int piece.column - 1)))
 
 (** [check_knight_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Knight to row [r] and column [c] is legal or not. Returns true if 
@@ -257,12 +263,15 @@ let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
       let piece = p in
       move_piece board piece c2 i2 can_castle_left can_castle_right
   | None -> None
+
 (** [get_king board color] returns the the [color] King piece *)
+
 let rec get_king (board : board) (color : color) =
   match board with
   | h :: t ->
       if h.piece_type = King && h.color = color then h else get_king t color
   | [] -> raise King_not_found
+
 let rec checked (board : board) (color : color) ((col, row) : char * int) =
   match board with
   | [] -> false
@@ -276,10 +285,12 @@ let rec checked (board : board) (color : color) ((col, row) : char * int) =
         | Queen -> check_queen_move h col row
         | King -> check_king_move h col row
       else checked t color (col, row)
+
 (** [is_check board color] returns boolean on whether the [color] king is in check or not on the [board] *)
 let is_check (board : board) (color : color) =
   let k = get_king board color in
   checked board color (k.column, k.row)
+
 (** [get_k_moves board color (col,row) ] returns a list of valid moves for the [color] king at the positon (col,row) *)
 let get_k_moves (board : board) (color : color) ((col, row) : char * int)
     (res : (char * int) list) =
@@ -326,6 +337,7 @@ let rec mated (moves : (char * int) list) (board : board) (color : color) =
   match moves with
   | [] -> true
   | h :: t -> if checked board color h then mated t board color else false
+
 (** [is_mate board color (col,row)] returns a boolean on whether the [color] king is in checkmate *)
 let is_mate (board : board) (color : color) ((col, row) : char * int) =
   let k = get_king board color in
