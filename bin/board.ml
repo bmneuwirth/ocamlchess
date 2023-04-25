@@ -59,6 +59,9 @@ let piece_type_to_char p =
 let get_piece b col row =
   List.find_opt (fun x -> x.column = col && x.row = row) b
 
+let piece_exists b col row =
+  match get_piece b col row with None -> false | Some piece -> true
+
 (** [remove_piece b col row] returns the board [b] with the piece at row [r] and 
 col [c] removed. *)
 let remove_piece b col row =
@@ -103,12 +106,17 @@ let next_col col = col_int_to_char (col_char_to_int col + 1)
 (** [prev_col col] gets the column to the left of [col]. *)
 let prev_col col = col_int_to_char (col_char_to_int col - 1)
 
-(** [check_pawn_move piece c i] is a bool that checks if moving [piece] of 
+(** [check_pawn_move piece b c i] is a bool that checks if moving [piece] of 
   piece_type Pawn to row [r] and column [c] is legal or not. Returns true if 
     legal, false if not. *)
-let check_pawn_move piece c i =
-  piece.color = White && c = piece.column
-  && (i = piece.row + 1 || (piece.row = 2 && i = piece.row + 2))
+let check_pawn_move piece b c i =
+  piece.color = White
+  && (i = piece.row + 1
+     || (piece.row = 2 && i = piece.row + 2)
+     || piece_exists b c i
+        && i = piece.row + 1
+        && (c = col_int_to_char (col_char_to_int piece.column + 1)
+           || c = col_int_to_char (col_char_to_int piece.column - 1)))
   || piece.color = Black && c = piece.column
      && (i = piece.row - 1 || (piece.row = 7 && i = piece.row - 2))
 
@@ -157,7 +165,7 @@ function to check if moving [piece] to column [c] and row [i] is valid based on
 its type. Returns true if legal move, false if not. *)
 let find_piece_type board piece c i =
   match piece.piece_type with
-  | Pawn -> check_pawn_move piece c i
+  | Pawn -> check_pawn_move piece board c i
   | Knight -> check_knight_move piece c i
   | Bishop -> check_bishop_move piece c i
   | Rook -> check_rook_move piece c i
