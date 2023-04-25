@@ -1,4 +1,3 @@
 (executable
- (public_name chessmon)
  (name main)
  (libraries chessmon ANSITerminal))
