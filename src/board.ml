@@ -9,34 +9,37 @@ type piece = {
   color : color;
   column : char;
   row : int;
+  en_passant_eligble : bool;
 }
 
 type board = piece list
 
 let board_width = 8
 let board_height = 8
-let make_piece piece_type color column row = { piece_type; color; column; row }
+
+let make_piece piece_type color column row en_passant_eligble =
+  { piece_type; color; column; row; en_passant_eligble }
 
 let init_pieces color : board =
   let pawn_start = if color = White then 2 else 7 in
   let back_start = if color = White then 1 else 8 in
   [
-    make_piece Pawn color 'A' pawn_start;
-    make_piece Pawn color 'B' pawn_start;
-    make_piece Pawn color 'C' pawn_start;
-    make_piece Pawn color 'D' pawn_start;
-    make_piece Pawn color 'E' pawn_start;
-    make_piece Pawn color 'F' pawn_start;
-    make_piece Pawn color 'G' pawn_start;
-    make_piece Pawn color 'H' pawn_start;
-    make_piece Rook color 'A' back_start;
-    make_piece Rook color 'H' back_start;
-    make_piece Knight color 'B' back_start;
-    make_piece Knight color 'G' back_start;
-    make_piece Bishop color 'C' back_start;
-    make_piece Bishop color 'F' back_start;
-    make_piece Queen color 'D' back_start;
-    make_piece King color 'E' back_start;
+    make_piece Pawn color 'A' pawn_start false;
+    make_piece Pawn color 'B' pawn_start false;
+    make_piece Pawn color 'C' pawn_start false;
+    make_piece Pawn color 'D' pawn_start false;
+    make_piece Pawn color 'E' pawn_start false;
+    make_piece Pawn color 'F' pawn_start false;
+    make_piece Pawn color 'G' pawn_start false;
+    make_piece Pawn color 'H' pawn_start false;
+    make_piece Rook color 'A' back_start false;
+    make_piece Rook color 'H' back_start false;
+    make_piece Knight color 'B' back_start false;
+    make_piece Knight color 'G' back_start false;
+    make_piece Bishop color 'C' back_start false;
+    make_piece Bishop color 'F' back_start false;
+    make_piece Queen color 'D' back_start false;
+    make_piece King color 'E' back_start false;
   ]
 
 let init_board = init_pieces White @ init_pieces Black
@@ -116,20 +119,26 @@ let prev_col col = col_int_to_char (col_char_to_int col - 1)
   piece_type Pawn to row [r] and column [c] on board [b] is legal or not. Returns true if 
     legal, false if not. *)
 let check_pawn_move piece b c i =
+  let target_column_right =
+    col_int_to_char (col_char_to_int piece.column + 1)
+  in
+  let target_column_left = col_int_to_char (col_char_to_int piece.column - 1) in
+  let piece_exists_on_right_diagonal = piece_exists b target_column_right i in
+  let piece_exists_on_left_diagonal = piece_exists b target_column_left i in
   piece.color = White
   && (i = piece.row + 1
      || (piece.row = 2 && i = piece.row + 2)
-     || piece_exists b c i
-        && i = piece.row + 1
-        && (c = col_int_to_char (col_char_to_int piece.column + 1)
-           || c = col_int_to_char (col_char_to_int piece.column - 1)))
+     || i = piece.row + 1
+        && piece_exists_on_right_diagonal && c = target_column_right
+     || i = piece.row + 1
+        && piece_exists_on_left_diagonal && c = target_column_left)
   || piece.color = Black
      && (i = piece.row - 1
         || (piece.row = 7 && i = piece.row - 2)
-        || piece_exists b c i
-           && i = piece.row - 1
-           && (c = col_int_to_char (col_char_to_int piece.column + 1)
-              || c = col_int_to_char (col_char_to_int piece.column - 1)))
+        || i = piece.row - 1
+           && piece_exists_on_right_diagonal && c = target_column_right
+        || i = piece.row - 1
+           && piece_exists_on_left_diagonal && c = target_column_left)
 
 (** [check_knight_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Knight to row [r] and column [c] is legal or not. Returns true if 
@@ -250,7 +259,12 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
     initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
   then try_castle board piece col row false
   else if check_piece_on_board board piece col row then
-    update_board board piece col row
+    let updated_piece =
+      if piece.piece_type = Pawn && abs (piece.row - row) = 2 then
+        { piece with en_passant_eligble = true }
+      else piece
+    in
+    update_board board updated_piece col row
   else None
 
 (* TODO: Add exception type for invalid moves? *)
