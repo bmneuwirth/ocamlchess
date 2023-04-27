@@ -119,26 +119,28 @@ let prev_col col = col_int_to_char (col_char_to_int col - 1)
   piece_type Pawn to row [r] and column [c] on board [b] is legal or not. Returns true if 
     legal, false if not. *)
 let check_pawn_move piece b c i =
-  let target_column_right =
-    col_int_to_char (col_char_to_int piece.column + 1)
+  let piece_exists_on_right_diagonal =
+    piece_exists b (col_int_to_char (col_char_to_int piece.column + 1)) i
   in
-  let target_column_left = col_int_to_char (col_char_to_int piece.column - 1) in
-  let piece_exists_on_right_diagonal = piece_exists b target_column_right i in
-  let piece_exists_on_left_diagonal = piece_exists b target_column_left i in
+  let piece_exists_on_left_diagonal =
+    piece_exists b (col_int_to_char (col_char_to_int piece.column - 1)) i
+  in
   piece.color = White
   && (i = piece.row + 1
      || (piece.row = 2 && i = piece.row + 2)
-     || i = piece.row + 1
-        && piece_exists_on_right_diagonal && c = target_column_right
-     || i = piece.row + 1
-        && piece_exists_on_left_diagonal && c = target_column_left)
+     || piece_exists_on_right_diagonal
+        && c = col_int_to_char (col_char_to_int piece.column + 1)
+     || piece_exists_on_left_diagonal
+        && c = col_int_to_char (col_char_to_int piece.column + 1))
   || piece.color = Black
      && (i = piece.row - 1
         || (piece.row = 7 && i = piece.row - 2)
         || i = piece.row - 1
-           && piece_exists_on_right_diagonal && c = target_column_right
+           && piece_exists_on_right_diagonal
+           && c = col_int_to_char (col_char_to_int piece.column + 1)
         || i = piece.row - 1
-           && piece_exists_on_left_diagonal && c = target_column_left)
+           && piece_exists_on_left_diagonal
+           && c = col_int_to_char (col_char_to_int piece.column - 1))
 
 (** [check_knight_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Knight to row [r] and column [c] is legal or not. Returns true if 
