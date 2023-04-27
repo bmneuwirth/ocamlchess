@@ -66,7 +66,7 @@ let get_piece b col row =
   List.find_opt (fun x -> x.column = col && x.row = row) b
 
 let piece_exists b col row =
-  match get_piece b col row with None -> false | Some piece -> true
+  match get_piece b col row with Some piece -> true | None -> false
 
 let get_piece_color b col row =
   match get_piece b col row with Some p -> Some p.color | None -> None
@@ -119,6 +119,58 @@ let prev_col col = col_int_to_char (col_char_to_int col - 1)
   piece_type Pawn to row [r] and column [c] on board [b] is legal or not. Returns true if 
     legal, false if not. *)
 let check_pawn_move piece b c i =
+  piece.color = White
+  && ((i = piece.row + 1 && c = piece.column)
+     || (piece.row = 2 && i = piece.row + 2 && c = piece.column)
+     || piece_exists b c i
+        && i = piece.row + 1
+        && (c = col_int_to_char (col_char_to_int piece.column + 1)
+           || c = col_int_to_char (col_char_to_int piece.column - 1)))
+  || piece.color = Black
+     && ((i = piece.row - 1 && c = piece.column)
+        || (piece.row = 7 && i = piece.row - 2 && c = piece.column)
+        || piece_exists b c i
+           && i = piece.row - 1
+           && c = col_int_to_char (col_char_to_int piece.column + 1)
+        || c = col_int_to_char (col_char_to_int piece.column - 1))
+
+(** let piece_exists_on_right_diagonal =
+    piece_exists b (col_int_to_char (col_char_to_int piece.column + 1)) i
+  in
+  let piece_exists_on_left_diagonal =
+    piece_exists b (col_int_to_char (col_char_to_int piece.column - 1)) i
+  in
+  print_endline "Checking pawn move";
+  print_endline
+    ("Piece exists on right diagonal: "
+    ^ string_of_bool piece_exists_on_right_diagonal);
+  print_endline
+    ("Piece exists on left diagonal: "
+    ^ string_of_bool piece_exists_on_left_diagonal);
+  print_endline ("Current column: " ^ String.make 1 piece.column);
+  print_endline ("Target column: " ^ String.make 1 c);
+  print_endline ("Current row: " ^ string_of_int piece.row);
+  print_endline ("Target row: " ^ string_of_int i);
+  piece.color = White
+  && ((i = piece.row + 1 && c = piece.column)
+     || (piece.row = 2 && i = piece.row + 2 && c = piece.column)
+     || piece_exists_on_right_diagonal
+        && i = piece.row + 1
+        && c = col_int_to_char (col_char_to_int piece.column + 1)
+     || piece_exists_on_left_diagonal
+        && i = piece.row + 1
+        && c = col_int_to_char (col_char_to_int piece.column - 1))
+  || piece.color = Black
+     && ((i = piece.row - 1 && c = piece.column)
+        || (piece.row = 7 && i = piece.row - 2 && c = piece.column)
+        || piece_exists_on_right_diagonal
+           && i = piece.row - 1
+           && c = col_int_to_char (col_char_to_int piece.column + 1)
+        || piece_exists_on_left_diagonal
+           && i = piece.row - 1
+           && c = col_int_to_char (col_char_to_int piece.column - 1))*)
+
+(**let check_pawn_move piece b c i =
   let piece_exists_on_right_diagonal =
     piece_exists b (col_int_to_char (col_char_to_int piece.column + 1)) i
   in
@@ -126,21 +178,23 @@ let check_pawn_move piece b c i =
     piece_exists b (col_int_to_char (col_char_to_int piece.column - 1)) i
   in
   piece.color = White
-  && (i = piece.row + 1
-     || (piece.row = 2 && i = piece.row + 2)
+  && ((i = piece.row + 1 && c = piece.column)
+     || (piece.row = 2 && i = piece.row + 2 && c = piece.column)
      || piece_exists_on_right_diagonal
+        && i = piece.row + 1
         && c = col_int_to_char (col_char_to_int piece.column + 1)
      || piece_exists_on_left_diagonal
-        && c = col_int_to_char (col_char_to_int piece.column + 1))
+        && i = piece.row + 1
+        && c = col_int_to_char (col_char_to_int piece.column - 1))
   || piece.color = Black
-     && (i = piece.row - 1
-        || (piece.row = 7 && i = piece.row - 2)
-        || i = piece.row - 1
-           && piece_exists_on_right_diagonal
+     && ((i = piece.row - 1 && c = piece.column)
+        || (piece.row = 7 && i = piece.row - 2 && c = piece.column)
+        || piece_exists_on_right_diagonal
+           && i = piece.row - 1
            && c = col_int_to_char (col_char_to_int piece.column + 1)
-        || i = piece.row - 1
-           && piece_exists_on_left_diagonal
-           && c = col_int_to_char (col_char_to_int piece.column - 1))
+        || piece_exists_on_left_diagonal
+           && i = piece.row - 1
+           && c = col_int_to_char (col_char_to_int piece.column - 1)) *)
 
 (** [check_knight_move piece c i] is a bool that checks if moving [piece] of 
   piece_type Knight to row [r] and column [c] is legal or not. Returns true if 
