@@ -218,7 +218,7 @@ let check_btwn_squares board piece c i =
        (next_square piece (piece.column, piece.row) (c, i))
        (c, i))
 
-let find_piece_type board piece c i =
+let check_valid_move board piece c i =
   match piece.piece_type with
   | Pawn -> check_pawn_end_pos piece c i && check_btwn_squares board piece c i
   | Bishop ->
@@ -228,21 +228,16 @@ let find_piece_type board piece c i =
   | Knight -> check_knight_end_pos piece c i
   | King -> check_king_end_pos piece c i
 
-(** [check_valid_move_of_piece board piece c i] is a boolean that returns 
-whether moving [piece] to column [c] and row [i] is a legal move or not. 
-Returns true if the move is legal, and returns false if the move is not legal. 
-Does not consider other pieces that could be in the way of the move and also 
-does not consider if the square on [r] and [c] is occupied *)
-let rec check_piece_on_board (oboard : board) (board : board) (piece : piece)
-    (c : char) (i : int) : bool =
+let rec check_valid_piece_on_board (oboard : board) (board : board)
+    (piece : piece) (c : char) (i : int) : bool =
   match board with
   | [] -> false
   | h :: t
     when h.piece_type = piece.piece_type
          && h.color = piece.color && h.column = piece.column
          && h.row = piece.row ->
-      find_piece_type oboard piece c i
-  | _ :: t -> check_piece_on_board oboard t piece c i
+      check_valid_move oboard piece c i
+  | _ :: t -> check_valid_piece_on_board oboard t piece c i
 
 (** [check_if_occupied board c i ] is a boolean that returns whether the square 
 represented by column [c] and row [i] is currently occupied (another piece is on
@@ -256,7 +251,7 @@ let try_castle (board : board) (piece : piece) (col : char) (row : int)
   let initial_king_row = if piece.color = White then 1 else 8 in
   let rook = Option.get (get_piece board rook_pos initial_king_row) in
   if
-    check_piece_on_board board board rook rook_dest initial_king_row
+    check_valid_piece_on_board board board rook rook_dest initial_king_row
     && not (check_if_occupied board rook_dest initial_king_row)
   then
     let board_without_rook = remove_piece board rook_pos initial_king_row in
@@ -293,7 +288,7 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
   else if
     initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
   then try_castle board piece col row false
-  else if check_piece_on_board board board piece col row then
+  else if check_valid_piece_on_board board board piece col row then
     update_board board piece col row
   else None
 

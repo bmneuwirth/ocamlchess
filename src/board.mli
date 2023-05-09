@@ -95,10 +95,15 @@ val check_btwn_squares : board -> piece -> char -> int -> bool
   path (piece.column, piece.row) to [(c, i)] are unoccupied. Returns true if so, 
   false if not. Requires: [(c, i)] is a valid end_pos for [piece] *)
 
-val find_piece_type : board -> piece -> char -> int -> bool
-(** [find_piece_type board piece c i] finds what type the [piece] is and calls 
+val check_valid_move : board -> piece -> char -> int -> bool
+(** [check_valid_move board piece c i] finds what type the [piece] is and calls 
 function to check if moving [piece] to column [c] and row [i] is valid based on
 its type. Returns true if legal move, false if not. *)
+
+val check_valid_piece_on_board : board -> piece -> char -> int -> bool
+(** [check_valid_piece_on_board piece c i] is a boolean that returns 
+whether moving [piece] to column [c] and row [i] is a legal move or not. 
+Returns true if the move is legal, and returns false if the move is not legal. *)
 
 val move : board -> char -> int -> char -> int -> bool -> bool -> board option
 (** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.
