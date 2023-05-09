@@ -7,6 +7,7 @@ type state = {
   color : color;
   white_state : player_state;
   black_state : player_state;
+  can_promote : bool;
 }
 
 val init_state : state

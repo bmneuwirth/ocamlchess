@@ -7,6 +7,7 @@ type state = {
   color : color;
   white_state : player_state;
   black_state : player_state;
+  can_promote : bool;
 }
 
 let init_player_state = { can_castle_left = true; can_castle_right = true }
@@ -17,12 +18,20 @@ let init_state =
     color = White;
     white_state = init_player_state;
     black_state = init_player_state;
+    can_promote = false;
   }
 
 let update_state board cur_state piece =
   let { color = cur_color; black_state; white_state } = cur_state in
   let gen_new_state new_color player_state =
-    let new_state = { cur_state with board; color = new_color } in
+    let new_state =
+      {
+        cur_state with
+        board;
+        color = new_color;
+        can_promote = piece.piece_type = Pawn && (piece.row = 1 || piece.row = 8);
+      }
+    in
     let player_state =
       {
         can_castle_left =
@@ -63,15 +72,22 @@ let move start_col start_row end_col end_row (cur_state : state) =
         | None -> None)
   | None -> None
 
-let print_command { board; color; _ } =
+let print_command { board; color; white_state; black_state; can_promote } =
+  print_endline (string_of_bool can_promote);
   let _ =
     match color with
     | White -> ANSITerminal.print_string [ ANSITerminal.white ] "White's turn. "
     | Black -> ANSITerminal.print_string [ ANSITerminal.black ] "Black's turn. "
   in
-  print_endline
-    "Input your command: [move [start position] [end position]] or [quit]. Ex: \
-     [move d2 d3]"
+  if can_promote then
+    print_endline
+      "Choose a piece type to promote the pawn to: [promote [piece type]] or \
+       [quit]. Ex: [promote q]"
+  else
+    print_endline
+      "Input your command: [move [start position] [end position]] or [quit]. \
+       Ex: [move d2 d3]"
+
 (* let remove_piece board piece = List.filter (fun x -> x != piece) board
 
    let update_piece piece col row = {piece.piece_type; piece.color; col; row}

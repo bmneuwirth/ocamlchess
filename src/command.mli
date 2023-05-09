@@ -8,7 +8,7 @@ type command_data = {
   end_row : int;
 }
 
-type command = Quit | Move of command_data
+type command = Quit | Move of command_data | Promote of Board.piece_type
 
 val parse : string -> command
 (** Parses the given string into a command. *)

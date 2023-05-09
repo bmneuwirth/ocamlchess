@@ -8,7 +8,10 @@ type command_data = {
   end_row : int;
 }
 
-type command = Quit | Move of command_data
+type command = Quit | Move of command_data | Promote of Board.piece_type
+
+let promote_char_valid str =
+  if String.get str 0 |> String.contains "qrbnQRBN" then true else false
 
 let first_char_valid str =
   if String.get str 0 |> String.contains "abcdefghABCDEFGH" = true then true
@@ -40,5 +43,18 @@ let parse str =
             end_col = first_char h2;
             end_row = second_char h2;
           }
+      else raise Invalid
+  | "promote" :: h1 :: _ ->
+      if String.length h1 > 0 && promote_char_valid h1 then
+        match h1 with
+        | "q" -> Promote Queen
+        | "Q" -> Promote Queen
+        | "b" -> Promote Bishop
+        | "B" -> Promote Bishop
+        | "r" -> Promote Rook
+        | "R" -> Promote Rook
+        | "n" -> Promote Knight
+        | "N" -> Promote Knight
+        | _ -> raise Invalid
       else raise Invalid
   | _ :: _ -> raise Invalid

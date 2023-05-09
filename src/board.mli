@@ -40,6 +40,9 @@ val get_piece_color : board -> char -> int -> color option
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
 
+val promote : board -> piece_type -> board
+(** [promote] returns a board that contains the updated piece with type [promote_to_piece_type]. *)
+
 val move : board -> char -> int -> char -> int -> bool -> bool -> board option
 (** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.
     The move is represented by [c1 i1 c2 i2], where c1i1 is the location of the
