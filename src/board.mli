@@ -19,6 +19,7 @@ type piece = {
   color : color;
   column : char;
   row : int;
+  en_passant_eligble : bool;
 }
 (** The type [piece] represents a particular piece on the board. *)
 
@@ -38,6 +39,9 @@ val get_piece_color : board -> char -> int -> color option
 
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
+
+val promote : board -> piece_type -> board
+(** [promote] returns a board that contains the updated piece with type [promote_to_piece_type]. *)
 
 val check_pawn_end_pos : piece -> char -> int -> bool
 (** [check_pawn_end_pos piece c i] is a bool that checks if moving [piece] of 
@@ -100,7 +104,7 @@ val check_valid_move : board -> piece -> char -> int -> bool
 function to check if moving [piece] to column [c] and row [i] is valid based on
 its type. Returns true if legal move, false if not. *)
 
-val check_valid_piece_on_board : board -> piece -> char -> int -> bool
+val check_valid_piece_on_board : board -> board -> piece -> char -> int -> bool
 (** [check_valid_piece_on_board piece c i] is a boolean that returns 
 whether moving [piece] to column [c] and row [i] is a legal move or not. 
 Returns true if the move is legal, and returns false if the move is not legal. *)

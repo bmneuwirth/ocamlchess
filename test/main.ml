@@ -88,6 +88,19 @@ let neither_can_castle =
   |> State.move 'E' 8 'F' 8 |> Option.get |> State.move 'F' 1 'E' 1
   |> Option.get |> State.move 'F' 8 'E' 8 |> Option.get
 
+let weird_board_test =
+  State.init_state |> State.move 'E' 2 'E' 4 |> Option.get
+  |> State.move 'F' 7 'F' 5 |> Option.get
+
+let (test_pawn : Board.piece) =
+  {
+    piece_type = Pawn;
+    color = Black;
+    column = 'F';
+    row = 5;
+    en_passant_eligble = false;
+  }
+
 (** TODO: test that moving rook prohibits castling one way *)
 let state_tests =
   [
@@ -291,6 +304,9 @@ let board_tests =
       Board.(move init_board 'E' 7 'E' 5 false false |> extract_board)
       { piece_type = Queen; color = Black; column = 'D'; row = 8 }
       'H' 4 true;
+    ( "is the black pawn there" >:: fun _ ->
+      assert_equal (Some test_pawn)
+        (Board.get_piece weird_board_test.board 'F' 5) );
   ]
 
 let suite =
