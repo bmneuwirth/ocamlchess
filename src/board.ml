@@ -133,22 +133,11 @@ let white_pawn_movement piece b c i =
   | 0 -> i = piece.row + 1 || (piece.row = 2 && i = piece.row + 2)
   | -1 ->
       let is_piece_on_dest = piece_exists b c i in
-      let _ =
-        print_board b;
-        print_endline
-          ("Column destination: " ^ Char.escaped c ^ " Row destination: "
-         ^ string_of_int i
-          ^ string_of_bool is_piece_on_dest)
-      in
       is_piece_on_dest
       && i = piece.row + 1
       && c = col_int_to_char (col_char_to_int piece.column + 1)
   | 1 ->
       let is_piece_on_dest = piece_exists b c i in
-      let _ =
-        print_board b;
-        print_endline (string_of_bool is_piece_on_dest)
-      in
       is_piece_on_dest
       && i = piece.row + 1
       && c = col_int_to_char (col_char_to_int piece.column - 1)
@@ -161,13 +150,11 @@ let black_pawn_movement piece b c i =
       || (piece.row = 7 && i = piece.row - 2 && c = piece.column)
   | -1 ->
       let is_piece_on_dest = piece_exists b c i in
-      let _ = print_endline (string_of_bool is_piece_on_dest) in
       is_piece_on_dest
       && i = piece.row - 1
       && c = col_int_to_char (col_char_to_int piece.column + 1)
   | 1 ->
       let is_piece_on_dest = piece_exists b c i in
-      let _ = print_endline (string_of_bool is_piece_on_dest) in
       is_piece_on_dest
       && i = piece.row - 1
       && c = col_int_to_char (col_char_to_int piece.column - 1)
@@ -311,11 +298,9 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
   else if
     initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
   then try_castle board piece col row false
-  else
-    let _ = print_board board in
-    if check_piece_on_board board board piece col row then
-      update_board board piece col row
-    else None
+  else if check_piece_on_board board board piece col row then
+    update_board board piece col row
+  else None
 
 (** let updated_piece =
       if piece.piece_type = Pawn && abs (piece.row - row) = 2 then
