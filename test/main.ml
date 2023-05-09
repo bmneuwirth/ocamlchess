@@ -43,7 +43,7 @@ let invalid_move_test (name : string) (state : state) (start_col : char)
     (start_row : int) (end_col : char) (end_row : int) =
   name >:: fun _ ->
   assert_equal None (State.move start_col start_row end_col end_row state)
-(*
+
 let castle_state_white =
   State.init_state |> State.move 'E' 2 'E' 4 |> Option.get
   |> State.move 'E' 7 'E' 6 |> Option.get |> State.move 'F' 1 'E' 2
@@ -119,7 +119,6 @@ let state_tests =
     ( "black can't castle left after king move" >:: fun _ ->
       assert_equal false neither_can_castle.black_state.can_castle_left );
   ]
-  *)
 
 exception EmptyBoard
 exception EmptyPiece
@@ -291,5 +290,7 @@ let board_tests =
       'H' 4 true;
   ]
 
-let suite = "test suite for chessmon" >::: List.flatten [ board_tests ]
+let suite =
+  "test suite for chessmon" >::: List.flatten [ state_tests; board_tests ]
+
 let _ = run_test_tt_main suite
