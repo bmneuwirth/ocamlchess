@@ -164,6 +164,10 @@ let check_king_end_pos piece c i =
 let check_if_occupied (board : board) (c : char) (i : int) : bool =
   match get_piece board c i with Some piece -> true | None -> false
 
+(** [next_square piece (start_col, start_row) (end_col, end_row)] returns the 
+      next square in the path from [(start_col, start_row)] to [(end_col, end_row)] 
+      depending on the piece_type of [piece]. *)
+
 let next_square piece (start_col, start_row) (end_col, end_row) =
   match piece.piece_type with
   | Pawn ->
@@ -196,6 +200,10 @@ let next_square piece (start_col, start_row) (end_col, end_row) =
   | King -> failwith "Should never occur"
   | Knight -> failwith "Should never occur"
 
+(** [find_path board piece (start_col, start_row) (end_col, end_row)] returns 
+  the list of squares that would be traveled in the path of [piece] from 
+  [(start_col, start_row)] to [(end_col, end_row)].*)
+
 let rec find_path board piece (start_col, start_row) (end_col, end_row) =
   match (start_col, start_row) with
   | x, y when x = end_col && y = end_row -> []
@@ -205,6 +213,9 @@ let rec find_path board piece (start_col, start_row) (end_col, end_row) =
            (next_square piece (start_col, start_row) (end_col, end_row))
            (end_col, end_row)
 
+(** [check_each_square board lst] checks every square in list, returns true if
+  every square is not occupied, returns false if at least one square is 
+    occupied. *)
 let rec check_each_square board lst =
   match lst with
   | [] -> true
@@ -295,12 +306,14 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
 (* TODO: Add exception type for invalid moves? *)
 (* TODO: Castling needs check checker to make sure it's a valid move (check
    if king is in check on each step of the castle)*)
+
+(** [get_king board color] returns the the [color] King piece *)
 let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
     (can_castle_left : bool) (can_castle_right : bool) : board option =
   match get_piece board c1 i1 with
   | Some p ->
       let piece = p in
-      move_piece board piece c2 i2 can_castle_left can_castle_right
+      move_piece board piece c2 i2 (* can_castle_left can_castle_right *)
   | None -> None
 
 (** [get_king board color] returns the the [color] King piece *)
