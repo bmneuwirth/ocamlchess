@@ -9,7 +9,6 @@ type piece = {
   color : color;
   column : char;
   row : int;
-  en_passant_eligble : bool;
 }
 
 type board = piece list
@@ -37,29 +36,28 @@ let string_of_list ?(open_delim = "[") ?(close_delim = "]") ?(sep = "; ")
 let to_string_pair (p : char * int) : string =
   "(" ^ (fst p |> Char.escaped) ^ ", " ^ (snd p |> Int.to_string) ^ ")"
 
-let make_piece piece_type color column row en_passant_eligble =
-  { piece_type; color; column; row; en_passant_eligble }
+let make_piece piece_type color column row = { piece_type; color; column; row }
 
 let init_pieces color : board =
   let pawn_start = if color = White then 2 else 7 in
   let back_start = if color = White then 1 else 8 in
   [
-    make_piece Pawn color 'A' pawn_start false;
-    make_piece Pawn color 'B' pawn_start false;
-    make_piece Pawn color 'C' pawn_start false;
-    make_piece Pawn color 'D' pawn_start false;
-    make_piece Pawn color 'E' pawn_start false;
-    make_piece Pawn color 'F' pawn_start false;
-    make_piece Pawn color 'G' pawn_start false;
-    make_piece Pawn color 'H' pawn_start false;
-    make_piece Rook color 'A' back_start false;
-    make_piece Rook color 'H' back_start false;
-    make_piece Knight color 'B' back_start false;
-    make_piece Knight color 'G' back_start false;
-    make_piece Bishop color 'C' back_start false;
-    make_piece Bishop color 'F' back_start false;
-    make_piece Queen color 'D' back_start false;
-    make_piece King color 'E' back_start false;
+    make_piece Pawn color 'A' pawn_start;
+    make_piece Pawn color 'B' pawn_start;
+    make_piece Pawn color 'C' pawn_start;
+    make_piece Pawn color 'D' pawn_start;
+    make_piece Pawn color 'E' pawn_start;
+    make_piece Pawn color 'F' pawn_start;
+    make_piece Pawn color 'G' pawn_start;
+    make_piece Pawn color 'H' pawn_start;
+    make_piece Rook color 'A' back_start;
+    make_piece Rook color 'H' back_start;
+    make_piece Knight color 'B' back_start;
+    make_piece Knight color 'G' back_start;
+    make_piece Bishop color 'C' back_start;
+    make_piece Bishop color 'F' back_start;
+    make_piece Queen color 'D' back_start;
+    make_piece King color 'E' back_start;
   ]
 
 let printing_board b =

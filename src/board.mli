@@ -19,7 +19,6 @@ type piece = {
   color : color;
   column : char;
   row : int;
-  en_passant_eligble : bool;
 }
 (** The type [piece] represents a particular piece on the board. *)
 
