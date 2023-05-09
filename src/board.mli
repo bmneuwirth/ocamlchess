@@ -43,6 +43,72 @@ val print_board : board -> unit
 val promote : board -> piece_type -> board
 (** [promote] returns a board that contains the updated piece with type [promote_to_piece_type]. *)
 
+val check_pawn_end_pos : piece -> char -> int -> bool
+(** [check_pawn_end_pos piece c i] is a bool that checks if moving [piece] of 
+  piece_type Pawn to row [i] and column [c] is legal or not. Returns true if 
+    legal, false if not. *)
+
+val check_knight_end_pos : piece -> char -> int -> bool
+(** [check_knight_end_pos piece c i] is a bool that checks if moving [piece] of 
+  piece_type Knight to row [i] and column [c] is legal or not. Returns true if 
+    legal, false if not. *)
+
+val check_bishop_end_pos : piece -> char -> int -> bool
+(** [check_bishop_end_pos piece c i] is a bool that checks if moving [piece] of 
+  piece_type Bishop to row [i] and column [c] is legal or not. Returns true if 
+    legal, false if not. *)
+
+val check_rook_end_pos : piece -> char -> int -> bool
+(** [check_rook_end_pos piece c i] is a bool that checks if moving [piece] of 
+  piece_type Rook to row [i] and column [c] is legal or not. Returns true if 
+    legal, false if not. *)
+
+val check_queen_end_pos : piece -> char -> int -> bool
+(** [check_queen_move piece c i] is a bool that checks if moving [piece] of 
+  piece_type Queen to row [i] and column [c] is legal or not. Returns true if 
+    legal, false if not. *)
+
+val check_king_end_pos : piece -> char -> int -> bool
+(** [check_king_move piece c i] is a bool that checks if moving [piece] of 
+  piece_type King to row [i] and column [c] is legal or not. Returns true if 
+    legal, false if not. *)
+
+val check_if_occupied : board -> char -> int -> bool
+(** [check_if_occupied board c i ] is a boolean that returns whether the square 
+represented by column [c] and row [i] is currently occupied (another piece is on
+the square represented by column [c] and row [i]). Returns true if occupied, 
+  false if not *)
+
+val next_square : piece -> char * int -> char * int -> char * int
+(** [next_square piece (start_col, start_row) (end_col, end_row)] returns the 
+next square on the path of [piece] from [(start_col, start_row)] to 
+[(end_col, end_row)] *)
+
+val find_path : board -> piece -> char * int -> char * int -> (char * int) list
+(** [find_path board piece (start_col, start_row) (end_col, end_row)] returns a 
+list of squares that [piece] takes in its path from [(start_col, start_row)] to 
+[(end_col, end_row)]] *)
+
+val check_each_square : board -> (char * int) list -> bool
+(** [check_each_square board lst] checks if each square in [lst] is occupied. 
+  If none are occupied, returns true. If at least one square is occupied, 
+returns false. ]*)
+
+val check_btwn_squares : board -> piece -> char -> int -> bool
+(** [check_pawn_btwn_squares board piece c i] checks if all the squares in the 
+  path (piece.column, piece.row) to [(c, i)] are unoccupied. Returns true if so, 
+  false if not. Requires: [(c, i)] is a valid end_pos for [piece] *)
+
+val check_valid_move : board -> piece -> char -> int -> bool
+(** [check_valid_move board piece c i] finds what type the [piece] is and calls 
+function to check if moving [piece] to column [c] and row [i] is valid based on
+its type. Returns true if legal move, false if not. *)
+
+val check_valid_piece_on_board : board -> board -> piece -> char -> int -> bool
+(** [check_valid_piece_on_board piece c i] is a boolean that returns 
+whether moving [piece] to column [c] and row [i] is a legal move or not. 
+Returns true if the move is legal, and returns false if the move is not legal. *)
+
 val move : board -> char -> int -> char -> int -> bool -> bool -> board option
 (** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.
     The move is represented by [c1 i1 c2 i2], where c1i1 is the location of the

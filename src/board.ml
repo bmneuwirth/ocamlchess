@@ -17,6 +17,26 @@ type board = piece list
 let board_width = 8
 let board_height = 8
 
+let string_of_list ?(open_delim = "[") ?(close_delim = "]") ?(sep = "; ")
+    string_of_elt lst =
+  let len = List.length lst in
+  let open Buffer in
+  (* As a rough lower bound assume that each element takes a minimum of 3
+     characters to represent including a separator, e.g., ["v, "]. The buffer
+     will grow as needed, so it's okay if that estimate is low. *)
+  let buf = create (3 * len) in
+  add_string buf open_delim;
+  List.iteri
+    (fun i v ->
+      add_string buf (string_of_elt v);
+      if i < len - 1 then add_string buf sep)
+    lst;
+  add_string buf close_delim;
+  contents buf
+
+let to_string_pair (p : char * int) : string =
+  "(" ^ (fst p |> Char.escaped) ^ ", " ^ (snd p |> Int.to_string) ^ ")"
+
 let make_piece piece_type color column row en_passant_eligble =
   { piece_type; color; column; row; en_passant_eligble }
 
@@ -168,80 +188,130 @@ let check_pawn_move piece b c i =
   | White -> white_pawn_movement piece b c i
   | Black -> black_pawn_movement piece b c i
 
-(** [check_knight_move piece c i] is a bool that checks if moving [piece] of 
-  piece_type Knight to row [r] and column [c] is legal or not. Returns true if 
-    legal, false if not. *)
-let check_knight_move piece c i =
+let check_pawn_end_pos piece c i =
+  piece.color = White && c = piece.column
+  && (i = piece.row + 1 || (piece.row = 2 && i = piece.row + 2))
+  || piece.color = Black && c = piece.column
+     && (i = piece.row - 1 || (piece.row = 7 && i = piece.row - 2))
+
+let check_knight_end_pos piece c i =
   ((i = piece.row + 1 || i = piece.row - 1)
    && c = next_col (next_col piece.column)
   || c = prev_col (prev_col piece.column))
   || ((i = piece.row + 2 || i = piece.row - 2) && c = next_col piece.column)
   || c = prev_col piece.column
 
-(** [check_bishop_move piece c i] is a bool that checks if moving [piece] of 
-  piece_type Bishop to row [r] and column [c] is legal or not. Returns true if 
-    legal, false if not. *)
-let check_bishop_move piece c i =
+let check_bishop_end_pos piece c i =
   abs (col_char_to_int c - col_char_to_int piece.column) = abs (i - piece.row)
 
-(** [check_rook_move piece c i] is a bool that checks if moving [piece] of 
-  piece_type Rook to row [r] and column [c] is legal or not. Returns true if 
-    legal, false if not. *)
-let check_rook_move piece c i =
+let check_rook_end_pos piece c i =
   (c = piece.column && Int.abs (i - piece.row) > 0)
   || i = piece.row
      && Int.abs (col_char_to_int c - col_char_to_int piece.column) > 0
 
-(** [check_queen_move piece c i] is a bool that checks if moving [piece] of 
-  piece_type Queen to row [r] and column [c] is legal or not. Returns true if 
-    legal, false if not. *)
-let check_queen_move piece c i =
-  check_bishop_move piece c i || check_rook_move piece c i
+let check_queen_end_pos piece c i =
+  check_bishop_end_pos piece c i || check_rook_end_pos piece c i
 
-(** [check_king_move piece c i] is a bool that checks if moving [piece] of 
-  piece_type King to row [r] and column [c] is legal or not. Returns true if 
-    legal, false if not. *)
-let check_king_move piece c i =
+let check_king_end_pos piece c i =
   (c = piece.column && (i = piece.row + 1 || i = piece.row - 1))
   || c = next_col piece.column
      && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
   || c = prev_col piece.column
      && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
 
-(** [find_piece_type board piece c i] finds what type the [piece] is and calls 
-function to check if moving [piece] to column [c] and row [i] is valid based on
-its type. Returns true if legal move, false if not. *)
-let find_piece_type board piece c i =
-  match piece.piece_type with
-  | Pawn -> check_pawn_move piece board c i
-  | Knight -> check_knight_move piece c i
-  | Bishop -> check_bishop_move piece c i
-  | Rook -> check_rook_move piece c i
-  | Queen -> check_queen_move piece c i
-  | King -> check_king_move piece c i
+let check_if_occupied (board : board) (c : char) (i : int) : bool =
+  match get_piece board c i with Some piece -> true | None -> false
 
-(** [check_valid_move_of_piece board piece c i] is a boolean that returns whether 
-moving [piece] to column [c] and row [i] is a legal move or not. Returns true if 
-the move is legal, and returns false if the move is not legal. Does not consider
-other pieces that could be in the way of the move and also does not consider if 
-the square on [r] and [c] is occupied *)
-let rec check_piece_on_board (oboard : board) (board : board) (piece : piece)
-    (c : char) (i : int) : bool =
+(** [next_square piece (start_col, start_row) (end_col, end_row)] returns the 
+      next square in the path from [(start_col, start_row)] to [(end_col, end_row)] 
+      depending on the piece_type of [piece]. *)
+
+let next_square piece (start_col, start_row) (end_col, end_row) =
+  match piece.piece_type with
+  | Pawn ->
+      if piece.color = White then (start_col, start_row + 1)
+      else (start_col, start_row - 1)
+  | Bishop ->
+      if end_col < start_col then
+        if end_row < start_row then (prev_col start_col, start_row - 1)
+        else (prev_col start_col, start_row + 1)
+      else if end_row < start_row then (next_col start_col, start_row - 1)
+      else (next_col start_col, start_row + 1)
+  | Rook ->
+      if end_col = start_col then
+        if end_row < start_row then (start_col, start_row - 1)
+        else (start_col, start_row + 1)
+      else if end_col < start_col then (prev_col start_col, start_row)
+      else (next_col start_col, start_row)
+  | Queen ->
+      if end_col = start_col then
+        if end_row < start_row then (start_col, start_row - 1)
+        else (start_col, start_row + 1)
+      else if end_row = start_row then
+        if end_col < start_col then (prev_col start_col, start_row)
+        else (next_col start_col, start_row)
+      else if end_col < start_col then
+        if end_row < start_row then (prev_col start_col, start_row - 1)
+        else (prev_col start_col, start_row + 1)
+      else if end_row < start_row then (next_col start_col, start_row - 1)
+      else (next_col start_col, start_row + 1)
+  | King -> failwith "Should never occur"
+  | Knight -> failwith "Should never occur"
+
+(** [find_path board piece (start_col, start_row) (end_col, end_row)] returns 
+  the list of squares that would be traveled in the path of [piece] from 
+  [(start_col, start_row)] to [(end_col, end_row)].*)
+
+let rec find_path board piece (start_col, start_row) (end_col, end_row) =
+  match (start_col, start_row) with
+  | x, y when x = end_col && y = end_row -> []
+  | _ ->
+      (start_col, start_row)
+      :: find_path board piece
+           (next_square piece (start_col, start_row) (end_col, end_row))
+           (end_col, end_row)
+
+(** [check_each_square board lst] checks every square in list, returns true if
+  every square is not occupied, returns false if at least one square is 
+    occupied. *)
+let rec check_each_square board lst =
+  match lst with
+  | [] -> true
+  | h :: t ->
+      if check_if_occupied board (fst h) (snd h) then false
+      else check_each_square board t
+
+let check_btwn_squares board piece c i =
+  check_each_square board
+    (find_path board piece
+       (next_square piece (piece.column, piece.row) (c, i))
+       (c, i))
+
+let check_valid_move board piece c i =
+  match piece.piece_type with
+  | Pawn -> check_pawn_end_pos piece c i && check_btwn_squares board piece c i
+  | Bishop ->
+      check_bishop_end_pos piece c i && check_btwn_squares board piece c i
+  | Rook -> check_rook_end_pos piece c i && check_btwn_squares board piece c i
+  | Queen -> check_queen_end_pos piece c i && check_btwn_squares board piece c i
+  | Knight -> check_knight_end_pos piece c i
+  | King -> check_king_end_pos piece c i
+
+let rec check_valid_piece_on_board (oboard : board) (board : board)
+    (piece : piece) (c : char) (i : int) : bool =
   match board with
   | [] -> false
-  | h :: t ->
-      if
-        h.piece_type = piece.piece_type
-        && h.color = piece.color && h.column = piece.column
-      then find_piece_type oboard piece c i
-      else check_piece_on_board oboard t piece c i
+  | h :: t
+    when h.piece_type = piece.piece_type
+         && h.color = piece.color && h.column = piece.column
+         && h.row = piece.row ->
+      check_valid_move oboard piece c i
+  | _ :: t -> check_valid_piece_on_board oboard t piece c i
 
 (** [check_if_occupied board c i ] is a boolean that returns whether the square 
 represented by column [c] and row [i] is currently occupied (another piece is on
 the square represented by column [c] and row [i]). Returns true if occupied, 
   false if not *)
-let check_if_occupied (board : board) (c : char) (i : int) : bool =
-  match get_piece board c i with Some piece -> true | None -> false
 
 let try_castle (board : board) (piece : piece) (col : char) (row : int)
     (is_left : bool) : board option =
@@ -250,7 +320,7 @@ let try_castle (board : board) (piece : piece) (col : char) (row : int)
   let initial_king_row = if piece.color = White then 1 else 8 in
   let rook = Option.get (get_piece board rook_pos initial_king_row) in
   if
-    check_piece_on_board board board rook rook_dest initial_king_row
+    check_valid_piece_on_board board board rook rook_dest initial_king_row
     && not (check_if_occupied board rook_dest initial_king_row)
   then
     let board_without_rook = remove_piece board rook_pos initial_king_row in
@@ -298,7 +368,7 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
   else if
     initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
   then try_castle board piece col row false
-  else if check_piece_on_board board board piece col row then
+  else if check_valid_piece_on_board board board piece col row then
     update_board board piece col row
   else None
 
@@ -312,6 +382,8 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
 (* TODO: Add exception type for invalid moves? *)
 (* TODO: Castling needs check checker to make sure it's a valid move (check
    if king is in check on each step of the castle)*)
+
+(** [get_king board color] returns the the [color] King piece *)
 let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
     (can_castle_left : bool) (can_castle_right : bool) : board option =
   match get_piece board c1 i1 with
@@ -334,12 +406,12 @@ let rec checked (board : board) (color : color) ((col, row) : char * int) =
   | h :: t ->
       if h.color != color then
         match h.piece_type with
-        | Pawn -> check_pawn_move h board col row
-        | Knight -> check_knight_move h col row
-        | Bishop -> check_bishop_move h col row
-        | Rook -> check_rook_move h col row
-        | Queen -> check_queen_move h col row
-        | King -> check_king_move h col row
+        | Pawn -> check_pawn_end_pos h col row
+        | Knight -> check_knight_end_pos h col row
+        | Bishop -> check_bishop_end_pos h col row
+        | Rook -> check_rook_end_pos h col row
+        | Queen -> check_queen_end_pos h col row
+        | King -> check_king_end_pos h col row
       else checked t color (col, row)
 
 (** [is_check board color] returns boolean on whether the [color] king is in check or not on the [board] *)
@@ -351,41 +423,41 @@ let is_check (board : board) (color : color) =
 let get_k_moves (board : board) (color : color) ((col, row) : char * int)
     (res : (char * int) list) =
   let res =
-    if check_king_move (get_king board color) col (row + 1) then
+    if check_king_end_pos (get_king board color) col (row + 1) then
       res @ [ (col, row + 1) ]
     else res
   in
   let res =
-    if check_king_move (get_king board color) col (row - 1) then
+    if check_king_end_pos (get_king board color) col (row - 1) then
       res @ [ (col, row - 1) ]
     else res
   in
   let res =
-    if check_king_move (get_king board color) (prev_col col) (row + 1) then
+    if check_king_end_pos (get_king board color) (prev_col col) (row + 1) then
       res @ [ (prev_col col, row + 1) ]
     else res
   in
   let res =
-    if check_king_move (get_king board color) (prev_col col) (row - 1) then
+    if check_king_end_pos (get_king board color) (prev_col col) (row - 1) then
       res @ [ (prev_col col, row - 1) ]
     else res
   in
   let res =
-    if check_king_move (get_king board color) (prev_col col) row then
+    if check_king_end_pos (get_king board color) (prev_col col) row then
       res @ [ (prev_col col, row) ]
     else res
   in
   let res =
-    if check_king_move (get_king board color) (next_col col) (row + 1) then
+    if check_king_end_pos (get_king board color) (next_col col) (row + 1) then
       res @ [ (next_col col, row + 1) ]
     else res
   in
   let res =
-    if check_king_move (get_king board color) (next_col col) (row - 1) then
+    if check_king_end_pos (get_king board color) (next_col col) (row - 1) then
       res @ [ (next_col col, row - 1) ]
     else res
   in
-  if check_king_move (get_king board color) (next_col col) row then
+  if check_king_end_pos (get_king board color) (next_col col) row then
     res @ [ (next_col col, row) ]
   else res
 
