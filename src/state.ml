@@ -35,7 +35,6 @@ let update_state board cur_state piece end_row =
         can_promote = piece.piece_type = Pawn && (end_row = 1 || end_row = 8);
       }
     in
-    let _ = print_endline ("Piece row: " ^ string_of_int end_row) in
     let player_state =
       {
         can_castle_left =
