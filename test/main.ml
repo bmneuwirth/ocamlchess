@@ -88,6 +88,13 @@ let neither_can_castle =
   |> State.move 'E' 8 'F' 8 |> Option.get |> State.move 'F' 1 'E' 1
   |> Option.get |> State.move 'F' 8 'E' 8 |> Option.get
 
+let weird_board_test =
+  State.init_state |> State.move 'E' 2 'E' 4 |> Option.get
+  |> State.move 'F' 7 'F' 5 |> Option.get
+
+let (test_pawn : Board.piece) =
+  { piece_type = Pawn; color = Black; column = 'F'; row = 5 }
+
 (** TODO: test that moving rook prohibits castling one way *)
 let state_tests =
   [
@@ -157,10 +164,12 @@ let find_path_test (name : string) (piece : Board.piece) (board : Board.board)
     (Board.find_path board piece (start_col, start_row) (end_col, end_row))
     ~printer:(string_of_list to_string_pair)
 
-let find_piece_type_test (name : string) board (piece : Board.piece) (c : char)
+let check_valid_move_test (name : string) board (piece : Board.piece) (c : char)
     (i : int) (expected_output : bool) : test =
   name >:: fun _ ->
-  assert_equal expected_output (Board.find_piece_type board piece c i)
+  assert_equal expected_output
+    (Board.check_valid_move board piece c i)
+    ~printer:string_of_bool
 
 let board_move_test (name : string) (board : Board.board) (c1 : char) (i1 : int)
     (c2 : char) (i2 : int) (can_castle_left : bool) (can_castle_right : bool)
@@ -213,7 +222,7 @@ let board_tests =
       { piece_type = Pawn; color = White; column = 'B'; row = 2 }
       Board.init_board ('B', 3) ('B', 4)
       [ ('B', 3) ];
-    find_piece_type_test "returns false if square is occupied - pawn"
+    check_valid_move_test "returns false if square is occupied - pawn"
       Board.(
         move
           (move init_board 'E' 2 'E' 4 false false |> extract_board)
@@ -234,11 +243,11 @@ let board_tests =
     check_bishop_end_pos_test "returns false if not valid end pos"
       { piece_type = Bishop; color = Black; column = 'D'; row = 5 }
       'A' 7 false;
-    find_piece_type_test "returns true if no square occupied - bishop"
+    check_valid_move_test "returns true if no square occupied - bishop"
       Board.(move init_board 'G' 2 'G' 4 false false |> extract_board)
       { piece_type = Bishop; color = White; column = 'F'; row = 1 }
       'H' 3 true;
-    find_piece_type_test "returns false if square occupied - bishop"
+    check_valid_move_test "returns false if square occupied - bishop"
       Board.(
         move
           (move init_board 'E' 2 'E' 4 false false |> extract_board)
@@ -252,7 +261,7 @@ let board_tests =
     check_rook_end_pos_test "returns false if not valid end pos"
       { piece_type = Rook; color = Black; column = 'A'; row = 1 }
       'H' 8 false;
-    find_piece_type_test "returns true if no square occupied - rook"
+    check_valid_move_test "returns true if no square occupied - rook"
       Board.(move init_board 'H' 2 'H' 4 false false |> extract_board)
       { piece_type = Rook; color = White; column = 'H'; row = 1 }
       'H' 3 true;
@@ -265,11 +274,11 @@ let board_tests =
       Board.(move init_board 'H' 2 'H' 4 false false |> extract_board)
       [ ('H', 2); ('H', 3); ('H', 4); ('H', 5) ]
       false;
-    find_piece_type_test "returns false if square occupied - rook"
+    check_valid_move_test "returns false if square occupied - rook"
       Board.(move init_board 'H' 2 'H' 4 false false |> extract_board)
       { piece_type = Rook; color = White; column = 'H'; row = 1 }
       'H' 6 false;
-    find_piece_type_test "testing queen rows"
+    check_valid_move_test "testing queen rows"
       Board.(
         move
           (move
@@ -280,17 +289,28 @@ let board_tests =
         |> extract_board)
       { piece_type = Queen; color = White; column = 'D'; row = 2 }
       'G' 2 false;
-    find_piece_type_test "testing queen columns"
+    check_valid_move_test "testing queen columns"
       Board.(move init_board 'D' 2 'D' 4 false false |> extract_board)
       { piece_type = Queen; color = White; column = 'D'; row = 1 }
       'D' 6 false;
-    find_piece_type_test "testing queen diagonals" Board.init_board
+    check_valid_move_test "testing queen diagonals" Board.init_board
       { piece_type = Queen; color = Black; column = 'D'; row = 8 }
       'H' 4 false;
-    find_piece_type_test "testing queen diagonals - true"
+    check_valid_move_test "testing queen diagonals - true"
       Board.(move init_board 'E' 7 'E' 5 false false |> extract_board)
       { piece_type = Queen; color = Black; column = 'D'; row = 8 }
       'H' 4 true;
+    ( "is the black pawn there" >:: fun _ ->
+      assert_equal (Some test_pawn)
+        (Board.get_piece weird_board_test.board 'F' 5) );
+    check_valid_move_test "knight shouldn't be able to move all across board"
+      Board.init_board
+      { piece_type = Knight; color = Black; column = 'G'; row = 8 }
+      'E' 1 false;
+    check_valid_move_test "knight shouldn't be able to move all across board"
+      Board.init_board
+      { piece_type = Knight; color = Black; column = 'B'; row = 8 }
+      'D' 1 false;
   ]
 
 let suite =

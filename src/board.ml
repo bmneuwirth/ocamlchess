@@ -57,6 +57,14 @@ let init_pieces color : board =
     make_piece King color 'E' back_start;
   ]
 
+let printing_board b =
+  let _ =
+    List.map
+      (fun x -> print_endline (Char.escaped x.column ^ string_of_int x.row))
+      b
+  in
+  ()
+
 let init_board = init_pieces White @ init_pieces Black
 
 (** [col_int_to_char col] returns the character representing the [col]th column. *)
@@ -77,6 +85,9 @@ let piece_type_to_char p =
 
 let get_piece b col row =
   List.find_opt (fun x -> x.column = col && x.row = row) b
+
+let piece_exists b col row =
+  match get_piece b col row with Some piece -> true | None -> false
 
 let get_piece_color b col row =
   match get_piece b col row with Some p -> Some p.color | None -> None
@@ -122,6 +133,51 @@ let next_col col = col_int_to_char (col_char_to_int col + 1)
 
 (** [prev_col col] gets the column to the left of [col]. *)
 let prev_col col = col_int_to_char (col_char_to_int col - 1)
+
+let piece_exists_on_right_diagonal piece b c i = piece_exists b c i
+
+let piece_exists_on_left_diagonal piece b c i =
+  piece_exists b (col_int_to_char (col_char_to_int piece.column - 1)) i
+
+let white_pawn_movement piece b c i =
+  match col_char_to_int piece.column - col_char_to_int c with
+  | 0 -> i = piece.row + 1 || (piece.row = 2 && i = piece.row + 2)
+  | -1 ->
+      let is_piece_on_dest = piece_exists b c i in
+      is_piece_on_dest
+      && i = piece.row + 1
+      && c = col_int_to_char (col_char_to_int piece.column + 1)
+  | 1 ->
+      let is_piece_on_dest = piece_exists b c i in
+      is_piece_on_dest
+      && i = piece.row + 1
+      && c = col_int_to_char (col_char_to_int piece.column - 1)
+  | _ -> false
+
+let black_pawn_movement piece b c i =
+  match col_char_to_int piece.column - col_char_to_int c with
+  | 0 ->
+      i = piece.row - 1
+      || (piece.row = 7 && i = piece.row - 2 && c = piece.column)
+  | -1 ->
+      let is_piece_on_dest = piece_exists b c i in
+      is_piece_on_dest
+      && i = piece.row - 1
+      && c = col_int_to_char (col_char_to_int piece.column + 1)
+  | 1 ->
+      let is_piece_on_dest = piece_exists b c i in
+      is_piece_on_dest
+      && i = piece.row - 1
+      && c = col_int_to_char (col_char_to_int piece.column - 1)
+  | _ -> false
+
+(** [check_pawn_move piece b c i] is a bool that checks if moving [piece] of 
+  piece_type Pawn to row [r] and column [c] on board [b] is legal or not. Returns true if 
+    legal, false if not. *)
+let check_pawn_move piece b c i =
+  match piece.color with
+  | White -> white_pawn_movement piece b c i
+  | Black -> black_pawn_movement piece b c i
 
 let check_pawn_end_pos piece c i =
   piece.color = White && c = piece.column
@@ -278,6 +334,17 @@ let update_board board piece col row =
           :: remove_piece board_without_piece captured_piece.column
                captured_piece.row)
 
+(** [promote] returns a board that contains the updated piece with type [promote_to_piece_type]. *)
+let promote (board : board) (promote_to_piece_type : piece_type) =
+  let pawn_to_promote =
+    List.find (fun x -> x.piece_type = Pawn && (x.row = 8 || x.row = 1)) board
+  in
+  let board_without_pawn =
+    remove_piece board pawn_to_promote.column pawn_to_promote.row
+  in
+  let new_piece = { pawn_to_promote with piece_type = promote_to_piece_type } in
+  new_piece :: board_without_pawn
+
 let move_piece (board : board) (piece : piece) (col : char) (row : int)
     (can_castle_left : bool) (can_castle_right : bool) : board option =
   let initial_king_row = if piece.color = White then 1 else 8 in
@@ -294,6 +361,13 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
     update_board board piece col row
   else None
 
+(** let updated_piece =
+      if piece.piece_type = Pawn && abs (piece.row - row) = 2 then
+        { piece with en_passant_eligble = true }
+      else piece
+    in
+    update_board board updated_piece col row*)
+
 (* TODO: Add exception type for invalid moves? *)
 (* TODO: Castling needs check checker to make sure it's a valid move (check
    if king is in check on each step of the castle)*)
@@ -307,6 +381,7 @@ let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
   | None -> None
 
 (** [get_king board color] returns the the [color] King piece *)
+
 let rec get_king (board : board) (color : color) =
   match board with
   | h :: t ->

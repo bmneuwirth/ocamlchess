@@ -43,6 +43,9 @@ col [c] removed. *)
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
 
+val promote : board -> piece_type -> board
+(** [promote] returns a board that contains the updated piece with type [promote_to_piece_type]. *)
+
 val check_pawn_end_pos : piece -> char -> int -> bool
 (** [check_pawn_end_pos piece c i] is a bool that checks if moving [piece] of 
   piece_type Pawn to row [i] and column [c] is legal or not. Returns true if 
