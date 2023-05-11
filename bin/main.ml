@@ -11,8 +11,10 @@ let rec game_loop cur_state =
       print_endline "Thanks for playing!\n";
       exit 0
   | Move { start_col; start_row; end_col; end_row } -> (
-      if should_promote then
-        print_status cur_state "Invalid: please enter promotion.\n"
+      if
+        (* If you move piece to last row, you will need to enter a promotion first before you can actually move.*)
+        should_promote
+      then print_status cur_state "Invalid: please enter promotion.\n"
       else
         let new_state_opt =
           State.move start_col start_row end_col end_row cur_state
