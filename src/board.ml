@@ -457,7 +457,7 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
     initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
   then try_castle board piece col row false
   else if
-    check_piece_on_board board board piece col row
+    check_valid_piece_on_board board board piece col row
     && not
          (let i =
             is_check (contents (update_board board piece col row)) piece.color
