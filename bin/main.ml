@@ -11,7 +11,6 @@ let rec game_loop cur_state =
       print_endline "Thanks for playing!\n";
       exit 0
   | Move { start_col; start_row; end_col; end_row } -> (
-    (** If you move piece to last row, you will need to enter a promotion first before you can actually move.*)
       if should_promote then
         print_status cur_state "Invalid: please enter promotion.\n"
       else
@@ -21,7 +20,17 @@ let rec game_loop cur_state =
         match new_state_opt with
         | None -> print_status cur_state "Invalid move.\n"
         | Some state -> print_status state "")
-  | Promote piece_type -> if should_promote then let new_state = {cur_state with board = (Board.promote cur_state.board piece_type); can_promote = false} in print_status new_state "" else print_status cur_state "Invalid command.\n"
+  | Promote piece_type ->
+      if should_promote then
+        let new_state =
+          {
+            cur_state with
+            board = Board.promote cur_state.board piece_type;
+            can_promote = false;
+          }
+        in
+        print_status new_state ""
+      else print_status cur_state "Invalid command.\n"
 
 (** [print_status state msg] prints the current status of the game using the 
     state and an optional additional message [msg]. *)
