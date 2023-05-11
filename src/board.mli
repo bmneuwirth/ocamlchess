@@ -36,6 +36,10 @@ val get_piece_color : board -> char -> int -> color option
 (** [get_piece_color board col row] returns [Some color] if there is a piece at 
     position (col, row) with color [color], or [None] if there is no piece there. *)
 
+val remove_piece : board -> char -> int -> board
+(** [remove_piece b col row] returns the board [b] with the piece at row [r] and 
+col [c] removed. *)
+
 val print_board : board -> unit
 (** [print_board board] prints out a representation of the current board [board]. *)
 
@@ -100,10 +104,14 @@ val check_valid_move : board -> piece -> char -> int -> bool
 function to check if moving [piece] to column [c] and row [i] is valid based on
 its type. Returns true if legal move, false if not. *)
 
-val check_valid_piece_on_board : board -> piece -> char -> int -> bool
+val check_valid_piece_on_board : board -> board -> piece -> char -> int -> bool
 (** [check_valid_piece_on_board piece c i] is a boolean that returns 
 whether moving [piece] to column [c] and row [i] is a legal move or not. 
 Returns true if the move is legal, and returns false if the move is not legal. *)
+
+val is_check : board -> color -> bool
+(** [is_check board color] returns boolean on whether the [color] king is in 
+check or not on the [board] *)
 
 val move : board -> char -> int -> char -> int -> bool -> bool -> board option
 (** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.

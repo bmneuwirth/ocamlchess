@@ -20,9 +20,6 @@ let string_of_list ?(open_delim = "[") ?(close_delim = "]") ?(sep = "; ")
     string_of_elt lst =
   let len = List.length lst in
   let open Buffer in
-  (* As a rough lower bound assume that each element takes a minimum of 3
-     characters to represent including a separator, e.g., ["v, "]. The buffer
-     will grow as needed, so it's okay if that estimate is low. *)
   let buf = create (3 * len) in
   add_string buf open_delim;
   List.iteri
@@ -78,16 +75,12 @@ let piece_type_to_char p =
   | Queen -> 'Q'
   | King -> 'K'
 
-(** [get_piece b col row] returns the piece on board [b] at row [r] and col [c],
-   where row is a int and col is a char. *)
 let get_piece b col row =
   List.find_opt (fun x -> x.column = col && x.row = row) b
 
 let get_piece_color b col row =
   match get_piece b col row with Some p -> Some p.color | None -> None
 
-(** [remove_piece b col row] returns the board [b] with the piece at row [r] and 
-col [c] removed. *)
 let remove_piece b col row =
   List.filter (fun x -> not (x.column = col && x.row = row)) b
 
@@ -137,11 +130,14 @@ let check_pawn_end_pos piece c i =
      && (i = piece.row - 1 || (piece.row = 7 && i = piece.row - 2))
 
 let check_knight_end_pos piece c i =
-  ((i = piece.row + 1 || i = piece.row - 1)
-   && c = next_col (next_col piece.column)
-  || c = prev_col (prev_col piece.column))
-  || ((i = piece.row + 2 || i = piece.row - 2) && c = next_col piece.column)
-  || c = prev_col piece.column
+  i = piece.row + 1
+  && abs (col_char_to_int c - col_char_to_int piece.column) = 2
+  || i = piece.row - 1
+     && abs (col_char_to_int c - col_char_to_int piece.column) = 2
+  || col_char_to_int c = col_char_to_int piece.column + 1
+     && (i = piece.row + 2 || i = piece.row - 2)
+  || col_char_to_int c = col_char_to_int piece.column - 1
+     && (i = piece.row + 2 || i = piece.row - 2)
 
 let check_bishop_end_pos piece c i =
   abs (col_char_to_int c - col_char_to_int piece.column) = abs (i - piece.row)
@@ -250,11 +246,6 @@ let rec check_valid_piece_on_board (oboard : board) (board : board)
       check_valid_move oboard piece c i
   | _ :: t -> check_valid_piece_on_board oboard t piece c i
 
-(** [check_if_occupied board c i ] is a boolean that returns whether the square 
-represented by column [c] and row [i] is currently occupied (another piece is on
-the square represented by column [c] and row [i]). Returns true if occupied, 
-  false if not *)
-
 let try_castle (board : board) (piece : piece) (col : char) (row : int)
     (is_left : bool) : board option =
   let rook_pos = if is_left then 'A' else 'H' in
@@ -307,13 +298,12 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
 (* TODO: Castling needs check checker to make sure it's a valid move (check
    if king is in check on each step of the castle)*)
 
-(** [get_king board color] returns the the [color] King piece *)
 let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
     (can_castle_left : bool) (can_castle_right : bool) : board option =
   match get_piece board c1 i1 with
   | Some p ->
       let piece = p in
-      move_piece board piece c2 i2 (* can_castle_left can_castle_right *)
+      move_piece board piece c2 i2 can_castle_left can_castle_right
   | None -> None
 
 (** [get_king board color] returns the the [color] King piece *)
@@ -337,7 +327,6 @@ let rec checked (board : board) (color : color) ((col, row) : char * int) =
         | King -> check_king_end_pos h col row
       else checked t color (col, row)
 
-(** [is_check board color] returns boolean on whether the [color] king is in check or not on the [board] *)
 let is_check (board : board) (color : color) =
   let k = get_king board color in
   checked board color (k.column, k.row)
