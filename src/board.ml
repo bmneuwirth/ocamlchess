@@ -283,7 +283,10 @@ let check_btwn_squares board piece c i =
 
 let check_valid_move board piece c i =
   match piece.piece_type with
-  | Pawn -> check_pawn_end_pos piece c i && check_btwn_squares board piece c i
+  | Pawn ->
+      let one_step_only = Int.abs (piece.row - i) <= 1 in
+      check_pawn_move piece board c i
+      && (one_step_only || check_btwn_squares board piece c i)
   | Bishop ->
       check_bishop_end_pos piece c i && check_btwn_squares board piece c i
   | Rook -> check_rook_end_pos piece c i && check_btwn_squares board piece c i
@@ -394,7 +397,7 @@ let rec checked (board : board) (color : color) ((col, row) : char * int) =
   | h :: t ->
       if h.color != color then
         match h.piece_type with
-        | Pawn -> check_pawn_end_pos h col row
+        | Pawn -> check_pawn_move h board col row
         | Knight -> check_knight_end_pos h col row
         | Bishop -> check_bishop_end_pos h col row
         | Rook -> check_rook_end_pos h col row
