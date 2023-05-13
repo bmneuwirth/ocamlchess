@@ -272,7 +272,10 @@ let check_btwn_squares board piece c i =
 
 let check_valid_move board piece c i =
   match piece.piece_type with
-  | Pawn -> check_pawn_end_pos piece c i && check_btwn_squares board piece c i
+  | Pawn ->
+      let one_step_only = Int.abs (piece.row - i) <= 1 in
+      check_pawn_move piece board c i
+      && (one_step_only || check_btwn_squares board piece c i)
   | Bishop ->
       check_bishop_end_pos piece c i && check_btwn_squares board piece c i
   | Rook -> check_rook_end_pos piece c i && check_btwn_squares board piece c i
@@ -340,22 +343,6 @@ let promote (board : board) (promote_to_piece_type : piece_type) =
   let new_piece = { pawn_to_promote with piece_type = promote_to_piece_type } in
   new_piece :: board_without_pawn
 
-let move_piece (board : board) (piece : piece) (col : char) (row : int)
-    (can_castle_left : bool) (can_castle_right : bool) : board option =
-  let initial_king_row = if piece.color = White then 1 else 8 in
-  let initial_king_move =
-    piece.piece_type = King && piece.column = 'E'
-    && piece.row = initial_king_row
-  in
-  if initial_king_move && col = 'C' && row = initial_king_row && can_castle_left
-  then try_castle board piece col row true
-  else if
-    initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
-  then try_castle board piece col row false
-  else if check_valid_piece_on_board board board piece col row then
-    update_board board piece col row
-  else None
-
 (** let updated_piece =
       if piece.piece_type = Pawn && abs (piece.row - row) = 2 then
         { piece with en_passant_eligble = true }
@@ -367,14 +354,6 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
 (* TODO: Castling needs check checker to make sure it's a valid move (check
    if king is in check on each step of the castle)*)
 
-let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
-    (can_castle_left : bool) (can_castle_right : bool) : board option =
-  match get_piece board c1 i1 with
-  | Some p ->
-      let piece = p in
-      move_piece board piece c2 i2 can_castle_left can_castle_right
-  | None -> None
-
 (** [get_king board color] returns the the [color] King piece *)
 
 let rec get_king (board : board) (color : color) =
@@ -383,23 +362,31 @@ let rec get_king (board : board) (color : color) =
       if h.piece_type = King && h.color = color then h else get_king t color
   | [] -> raise King_not_found
 
-let rec checked (board : board) (color : color) ((col, row) : char * int) =
+let print_color (c : color) : string =
+  match c with Black -> "black" | White -> "white"
+
+let rec checked (oboard : board) (board : board) (color : color)
+    ((col, row) : char * int) =
   match board with
   | [] -> false
   | h :: t ->
-      if h.color != color then
-        match h.piece_type with
-        | Pawn -> check_pawn_end_pos h col row
-        | Knight -> check_knight_end_pos h col row
-        | Bishop -> check_bishop_end_pos h col row
-        | Rook -> check_rook_end_pos h col row
-        | Queen -> check_queen_end_pos h col row
-        | King -> check_king_end_pos h col row
-      else checked t color (col, row)
+      if
+        h.color != color
+        &&
+        let f = check_valid_move oboard h col row in
+        let _ =
+          print_endline
+            (string_of_bool f ^ print_color color ^ print_color h.color
+           ^ Char.escaped h.column ^ string_of_int h.row ^ Char.escaped col
+           ^ string_of_int row)
+        in
+        f
+      then true
+      else checked oboard t color (col, row)
 
 let is_check (board : board) (color : color) =
   let k = get_king board color in
-  checked board color (k.column, k.row)
+  checked board board color (k.column, k.row)
 
 (** [get_k_moves board color (col,row) ] returns a list of valid moves for the [color] king at the positon (col,row) *)
 let get_k_moves (board : board) (color : color) ((col, row) : char * int)
@@ -446,9 +433,47 @@ let get_k_moves (board : board) (color : color) ((col, row) : char * int)
 let rec mated (moves : (char * int) list) (board : board) (color : color) =
   match moves with
   | [] -> true
-  | h :: t -> if checked board color h then mated t board color else false
+  | h :: t -> if checked board board color h then mated t board color else false
 
 (** [is_mate board color (col,row)] returns a boolean on whether the [color] king is in checkmate *)
-let is_mate (board : board) (color : color) ((col, row) : char * int) =
+let is_mate (board : board) (color : color) =
   let k = get_king board color in
   mated (get_k_moves board color (k.column, k.row) []) board color
+
+let contents (opt : board option) = match opt with Some x -> x | None -> []
+
+let move_piece (board : board) (piece : piece) (col : char) (row : int)
+    (can_castle_left : bool) (can_castle_right : bool) : board option =
+  let initial_king_row = if piece.color = White then 1 else 8 in
+  let initial_king_move =
+    piece.piece_type = King && piece.column = 'E'
+    && piece.row = initial_king_row
+  in
+  if initial_king_move && col = 'C' && row = initial_king_row && can_castle_left
+  then try_castle board piece col row true
+  else if
+    initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
+  then try_castle board piece col row false
+  else if
+    check_valid_piece_on_board board board piece col row
+    && not
+         (let i =
+            is_check (contents (update_board board piece col row)) piece.color
+          in
+          let _ = print_endline (string_of_bool i) in
+          i)
+  then update_board board piece col row
+  else None
+
+(* TODO: Add exception type for invalid moves? *)
+(* TODO: Castling needs check checker to make sure it's a valid move (check
+   if king is in check on each step of the castle)*)
+
+(** [get_king board color] returns the the [color] King piece *)
+let move (board : board) (c1 : char) (i1 : int) (c2 : char) (i2 : int)
+    (can_castle_left : bool) (can_castle_right : bool) : board option =
+  match get_piece board c1 i1 with
+  | Some p ->
+      let piece = p in
+      move_piece board piece c2 i2 can_castle_left can_castle_right
+  | None -> None
