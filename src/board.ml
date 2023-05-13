@@ -305,6 +305,39 @@ let rec check_valid_piece_on_board (oboard : board) (board : board)
       check_valid_move oboard piece c i
   | _ :: t -> check_valid_piece_on_board oboard t piece c i
 
+let update_board board piece col row =
+  let new_piece = { piece with column = col; row } in
+  let board_without_piece = remove_piece board piece.column piece.row in
+  match get_piece board col row with
+  | None -> Some (new_piece :: board_without_piece)
+  | Some captured_piece ->
+      if captured_piece.color = piece.color then None
+      else
+        Some
+          (new_piece
+          :: remove_piece board_without_piece captured_piece.column
+               captured_piece.row)
+
+let rec checked (oboard : board) (board : board) (color : color)
+    ((col, row) : char * int) =
+  match board with
+  | [] -> false
+  | h :: t ->
+      if h.color != color && check_valid_move oboard h col row then true
+      else checked oboard t color (col, row)
+
+(** [get_king board color] returns the the [color] King piece *)
+
+let rec get_king (board : board) (color : color) =
+  match board with
+  | h :: t ->
+      if h.piece_type = King && h.color = color then h else get_king t color
+  | [] -> raise King_not_found
+
+let is_check (board : board) (color : color) =
+  let k = get_king board color in
+  checked board board color (k.column, k.row)
+
 let try_castle (board : board) (piece : piece) (col : char) (row : int)
     (is_left : bool) : board option =
   let rook_pos = if is_left then 'A' else 'H' in
@@ -321,21 +354,30 @@ let try_castle (board : board) (piece : piece) (col : char) (row : int)
     in
     let new_king = { piece with column = col; row } in
     let new_rook = { rook with column = rook_dest; row } in
-    Some (new_king :: new_rook :: board_without_pieces)
-  else None
-
-let update_board board piece col row =
-  let new_piece = { piece with column = col; row } in
-  let board_without_piece = remove_piece board piece.column piece.row in
-  match get_piece board col row with
-  | None -> Some (new_piece :: board_without_piece)
-  | Some captured_piece ->
-      if captured_piece.color = piece.color then None
+    let updated_board = Some (new_king :: new_rook :: board_without_pieces) in
+    if is_left then
+      let first_board_move = update_board board piece 'D' row in
+      if first_board_move = None then None
+      else if is_check (Option.get first_board_move) piece.color then None
       else
-        Some
-          (new_piece
-          :: remove_piece board_without_piece captured_piece.column
-               captured_piece.row)
+        let second_board_move = update_board board piece 'C' row in
+        if second_board_move = None then None
+        else if is_check (Option.get second_board_move) piece.color then None
+        else
+          let third_board_move = update_board board piece 'B' row in
+          if third_board_move = None then None
+          else if is_check (Option.get third_board_move) piece.color then None
+          else updated_board
+    else
+      let first_board_move = update_board board piece 'F' row in
+      if first_board_move = None then None
+      else if is_check (Option.get first_board_move) piece.color then None
+      else
+        let second_board_move = update_board board piece 'G' row in
+        if second_board_move = None then None
+        else if is_check (Option.get second_board_move) piece.color then None
+        else updated_board
+  else None
 
 (** [promote] returns a board that contains the updated piece with type [promote_to_piece_type]. *)
 let promote (board : board) (promote_to_piece_type : piece_type) =
@@ -348,50 +390,8 @@ let promote (board : board) (promote_to_piece_type : piece_type) =
   let new_piece = { pawn_to_promote with piece_type = promote_to_piece_type } in
   new_piece :: board_without_pawn
 
-(** let updated_piece =
-      if piece.piece_type = Pawn && abs (piece.row - row) = 2 then
-        { piece with en_passant_eligble = true }
-      else piece
-    in
-    update_board board updated_piece col row*)
-
-(* TODO: Add exception type for invalid moves? *)
-(* TODO: Castling needs check checker to make sure it's a valid move (check
-   if king is in check on each step of the castle)*)
-
-(** [get_king board color] returns the the [color] King piece *)
-
-let rec get_king (board : board) (color : color) =
-  match board with
-  | h :: t ->
-      if h.piece_type = King && h.color = color then h else get_king t color
-  | [] -> raise King_not_found
-
 let print_color (c : color) : string =
   match c with Black -> "black" | White -> "white"
-
-let rec checked (oboard : board) (board : board) (color : color)
-    ((col, row) : char * int) =
-  match board with
-  | [] -> false
-  | h :: t ->
-      if
-        h.color != color
-        &&
-        let f = check_valid_move oboard h col row in
-        let _ =
-          print_endline
-            (string_of_bool f ^ print_color color ^ print_color h.color
-           ^ Char.escaped h.column ^ string_of_int h.row ^ Char.escaped col
-           ^ string_of_int row)
-        in
-        f
-      then true
-      else checked oboard t color (col, row)
-
-let is_check (board : board) (color : color) =
-  let k = get_king board color in
-  checked board board color (k.column, k.row)
 
 (** [get_k_moves board color (col,row) ] returns a list of valid moves for the [color] king at the positon (col,row) *)
 let get_k_moves (board : board) (color : color) ((col, row) : char * int)
@@ -461,12 +461,7 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
   then try_castle board piece col row false
   else if
     check_valid_piece_on_board board board piece col row
-    && not
-         (let i =
-            is_check (contents (update_board board piece col row)) piece.color
-          in
-          let _ = print_endline (string_of_bool i) in
-          i)
+    && not (is_check (contents (update_board board piece col row)) piece.color)
   then update_board board piece col row
   else None
 
