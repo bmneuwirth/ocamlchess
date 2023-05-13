@@ -1,6 +1,7 @@
 open Board
 
 type player_state = { can_castle_left : bool; can_castle_right : bool }
+(** The type [player_state] represents state information individual to each player. *)
 
 type state = {
   board : board;
@@ -9,6 +10,9 @@ type state = {
   black_state : player_state;
   can_promote : bool;
 }
+(** The type [state] represents state information of the game, including the board,
+    the color whose turn it is, individual white and black player states, and
+    whether a pawn is eligible for promotion. *)
 
 val init_state : state
 (** [init_state] is the initial state of the game. *)
