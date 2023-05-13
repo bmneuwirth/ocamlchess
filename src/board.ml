@@ -216,10 +216,6 @@ let check_king_end_pos piece c i =
 let check_if_occupied (board : board) (c : char) (i : int) : bool =
   match get_piece board c i with Some piece -> true | None -> false
 
-(** [next_square piece (start_col, start_row) (end_col, end_row)] returns the 
-      next square in the path from [(start_col, start_row)] to [(end_col, end_row)] 
-      depending on the piece_type of [piece]. *)
-
 let next_square piece (start_col, start_row) (end_col, end_row) =
   match piece.piece_type with
   | Pawn ->
@@ -252,10 +248,6 @@ let next_square piece (start_col, start_row) (end_col, end_row) =
   | King -> failwith "Should never occur"
   | Knight -> failwith "Should never occur"
 
-(** [find_path board piece (start_col, start_row) (end_col, end_row)] returns 
-  the list of squares that would be traveled in the path of [piece] from 
-  [(start_col, start_row)] to [(end_col, end_row)].*)
-
 let rec find_path board piece (start_col, start_row) (end_col, end_row) =
   match (start_col, start_row) with
   | x, y when x = end_col && y = end_row -> []
@@ -265,9 +257,6 @@ let rec find_path board piece (start_col, start_row) (end_col, end_row) =
            (next_square piece (start_col, start_row) (end_col, end_row))
            (end_col, end_row)
 
-(** [check_each_square board lst] checks every square in list, returns true if
-  every square is not occupied, returns false if at least one square is 
-    occupied. *)
 let rec check_each_square board lst =
   match lst with
   | [] -> true
@@ -301,6 +290,12 @@ let rec check_valid_piece_on_board (oboard : board) (board : board)
          && h.row = piece.row ->
       check_valid_move oboard piece c i
   | _ :: t -> check_valid_piece_on_board oboard t piece c i
+
+let is_capture (board : board) (piece : piece) (col : char) (row : int) : bool =
+  match get_piece board col row with
+  | Some captured_piece ->
+      if captured_piece.color <> piece.color then true else false
+  | None -> false
 
 let try_castle (board : board) (piece : piece) (col : char) (row : int)
     (is_left : bool) : board option =
