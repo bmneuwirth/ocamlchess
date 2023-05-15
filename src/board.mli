@@ -1,18 +1,18 @@
 exception King_not_found
-exception CheckMate
+(** Raised when the King is not found on the board. *)
 
-type color =
-  | Black
-  | White  (** The type [color] represents the color of a particular piece. *)
+(** The type [color] represents the color of a particular piece. *)
+type color = Black | White
 
-type piece_type =
-  | Pawn
-  | Knight
-  | Bishop
-  | Rook
-  | Queen
-  | King
-      (** The type [piece_type] represents the type of a particular piece. *)
+type board
+(** The type [board] represents all of the pieces on the chess board. *)
+
+exception Checkmate of color * board
+(** Raised when checkmate is reached with [color] winning and [board] being 
+    the board with checkmate. *)
+
+(** The type [piece_type] represents the type of a particular piece. *)
+type piece_type = Pawn | Knight | Bishop | Rook | Queen | King
 
 type piece = {
   piece_type : piece_type;
@@ -20,10 +20,8 @@ type piece = {
   column : char;
   row : int;
 }
-(** The type [piece] represents a particular piece on the board. *)
-
-type board
-(** The type [board] represents the state of the chess board. *)
+(** The type [piece] represents a particular piece on the board, including its
+type, color, and position. *)
 
 val init_board : board
 (** [init_board] returns the initial chess board at the start of a game. *)
@@ -128,8 +126,9 @@ val move : board -> char -> int -> char -> int -> bool -> bool -> board option
 (** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.
     The move is represented by [c1 i1 c2 i2], where c1i1 is the location of the
     piece to move, c2 is the letter representing the column to move to, and i2 is 
-    the int representing the row to move to. [b1] represents whether the player is allowed
-    to castle left. [b2] represents whether the player is allowed to castle right.
+    the int representing the row to move to. [b1] represents whether the player 
+    is allowed to castle left. [b2] represents whether the player is allowed 
+    to castle right.
     
     If the move is invalid, [None] is returned, and if the move is valid, 
     [Some new_board] is returned where [new_board] is the updated board. *)
