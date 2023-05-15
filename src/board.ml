@@ -95,6 +95,7 @@ let get_piece_color b col row =
 let remove_piece b col row =
   List.filter (fun x -> not (x.column = col && x.row = row)) b
 
+  let contents (opt : board option) = match opt with Some x -> x | None -> []
 (** [print_piece_char b col row] prints the character representing the piece on
    board b at row r and col c, where row and col are both ints. *)
 let print_piece_char b col row =
@@ -213,12 +214,17 @@ let check_king_end_pos piece c i =
   || c = prev_col piece.column
      && (i = piece.row || i = piece.row + 1 || i = piece.row - 1)
 
-let check_if_occupied (board : board) (c : char) (i : int) : bool =
-  match get_piece board c i with Some piece -> true | None -> false
+let check_if_occupied_Jack (board : board) (c : char) (i : int) (color : color)
+    : bool =
+  match get_piece board c i with
+  | Some piece when piece.color = color -> true
+  | _ -> false
 
 (** [next_square piece (start_col, start_row) (end_col, end_row)] returns the 
       next square in the path from [(start_col, start_row)] to [(end_col, end_row)] 
       depending on the piece_type of [piece]. *)
+let check_if_occupied (board : board) (c : char) (i : int) : bool =
+  match get_piece board c i with Some piece -> true | None -> false
 
 let next_square piece (start_col, start_row) (end_col, end_row) =
   match piece.piece_type with
@@ -282,17 +288,20 @@ let check_btwn_squares board piece c i =
        (c, i))
 
 let check_valid_move board piece c i =
-  match piece.piece_type with
-  | Pawn ->
-      let one_step_only = Int.abs (piece.row - i) <= 1 in
-      check_pawn_move piece board c i
-      && (one_step_only || check_btwn_squares board piece c i)
-  | Bishop ->
-      check_bishop_end_pos piece c i && check_btwn_squares board piece c i
-  | Rook -> check_rook_end_pos piece c i && check_btwn_squares board piece c i
-  | Queen -> check_queen_end_pos piece c i && check_btwn_squares board piece c i
-  | Knight -> check_knight_end_pos piece c i
-  | King -> check_king_end_pos piece c i
+  if col_char_to_int c > 8 || col_char_to_int c < 1 || i > 8 || i < 1 then false
+  else
+    match piece.piece_type with
+    | Pawn ->
+        let one_step_only = Int.abs (piece.row - i) <= 1 in
+        check_pawn_move piece board c i
+        && (one_step_only || check_btwn_squares board piece c i)
+    | Bishop ->
+        check_bishop_end_pos piece c i && check_btwn_squares board piece c i
+    | Rook -> check_rook_end_pos piece c i && check_btwn_squares board piece c i
+    | Queen ->
+        check_queen_end_pos piece c i && check_btwn_squares board piece c i
+    | Knight -> check_knight_end_pos piece c i
+    | King -> check_king_end_pos piece c i
 
 let rec check_valid_piece_on_board (oboard : board) (board : board)
     (piece : piece) (c : char) (i : int) : bool =
@@ -323,19 +332,6 @@ let try_castle (board : board) (piece : piece) (col : char) (row : int)
     let new_rook = { rook with column = rook_dest; row } in
     Some (new_king :: new_rook :: board_without_pieces)
   else None
-
-let update_board board piece col row =
-  let new_piece = { piece with column = col; row } in
-  let board_without_piece = remove_piece board piece.column piece.row in
-  match get_piece board col row with
-  | None -> Some (new_piece :: board_without_piece)
-  | Some captured_piece ->
-      if captured_piece.color = piece.color then None
-      else
-        Some
-          (new_piece
-          :: remove_piece board_without_piece captured_piece.column
-               captured_piece.row)
 
 (** [promote] returns a board that contains the updated piece with type [promote_to_piece_type]. *)
 let promote (board : board) (promote_to_piece_type : piece_type) =
@@ -390,49 +386,68 @@ let rec checked (oboard : board) (board : board) (color : color)
       else checked oboard t color (col, row)
 
 let is_check (board : board) (color : color) =
-  let k = get_king board color in
-  checked board board color (k.column, k.row)
+  try
+    let k = get_king board color in
+    checked board board color (k.column, k.row)
+  with King_not_found -> true
 
 (** [get_k_moves board color (col,row) ] returns a list of valid moves for the [color] king at the positon (col,row) *)
 let get_k_moves (board : board) (color : color) ((col, row) : char * int)
     (res : (char * int) list) =
+  let king = get_king board color in
   let res =
-    if check_king_end_pos (get_king board color) col (row + 1) then
-      res @ [ (col, row + 1) ]
+    if
+      check_valid_move board king col (row + 1)
+      && not (check_if_occupied_Jack board col (row + 1) color)
+    then res @ [ (col, row + 1) ]
     else res
   in
   let res =
-    if check_king_end_pos (get_king board color) col (row - 1) then
-      res @ [ (col, row - 1) ]
+    if
+      check_valid_move board king col (row - 1)
+      && not (check_if_occupied_Jack board col (row - 1) color)
+    then res @ [ (col, row - 1) ]
     else res
   in
   let res =
-    if check_king_end_pos (get_king board color) (prev_col col) (row + 1) then
-      res @ [ (prev_col col, row + 1) ]
+    if
+      check_valid_move board king (prev_col col) (row + 1)
+      && not (check_if_occupied_Jack board (prev_col col) (row + 1) color)
+    then res @ [ (prev_col col, row + 1) ]
     else res
   in
   let res =
-    if check_king_end_pos (get_king board color) (prev_col col) (row - 1) then
-      res @ [ (prev_col col, row - 1) ]
+    if
+      check_valid_move board king (prev_col col) (row - 1)
+      && not (check_if_occupied_Jack board (prev_col col) (row - 1) color)
+    then res @ [ (prev_col col, row - 1) ]
     else res
   in
   let res =
-    if check_king_end_pos (get_king board color) (prev_col col) row then
-      res @ [ (prev_col col, row) ]
+    if
+      check_valid_move board king (prev_col col) row
+      && not (check_if_occupied_Jack board (prev_col col) row color)
+    then res @ [ (prev_col col, row) ]
     else res
   in
   let res =
-    if check_king_end_pos (get_king board color) (next_col col) (row + 1) then
-      res @ [ (next_col col, row + 1) ]
+    if
+      check_valid_move board king (next_col col) (row + 1)
+      && not (check_if_occupied_Jack board (next_col col) (row + 1) color)
+    then res @ [ (next_col col, row + 1) ]
     else res
   in
   let res =
-    if check_king_end_pos (get_king board color) (next_col col) (row - 1) then
-      res @ [ (next_col col, row - 1) ]
+    if
+      check_valid_move board king (next_col col) (row - 1)
+      && not (check_if_occupied_Jack board (next_col col) (row - 1) color)
+    then res @ [ (next_col col, row - 1) ]
     else res
   in
-  if check_king_end_pos (get_king board color) (next_col col) row then
-    res @ [ (next_col col, row) ]
+  if
+    check_valid_move board king (next_col col) row
+    && not (check_if_occupied_Jack board (next_col col) row color)
+  then res @ [ (next_col col, row) ]
   else res
 
 let rec mated (moves : (char * int) list) (board : board) (color : color) =
@@ -440,12 +455,160 @@ let rec mated (moves : (char * int) list) (board : board) (color : color) =
   | [] -> true
   | h :: t -> if checked board board color h then mated t board color else false
 
+let rec print_k_move lst acc =
+  match lst with
+  | (c, r) :: t -> print_k_move t acc ^ Char.escaped c ^ string_of_int r
+  | [] -> acc
+
+let all_pos =
+  [
+    ('A', 1);
+    ('B', 1);
+    ('C', 1);
+    ('D', 1);
+    ('E', 1);
+    ('F', 1);
+    ('G', 1);
+    ('H', 1);
+    ('A', 2);
+    ('B', 2);
+    ('C', 2);
+    ('D', 2);
+    ('E', 2);
+    ('F', 2);
+    ('G', 2);
+    ('H', 2);
+    ('A', 3);
+    ('B', 3);
+    ('C', 3);
+    ('D', 3);
+    ('E', 3);
+    ('F', 3);
+    ('G', 3);
+    ('H', 3);
+    ('A', 4);
+    ('B', 4);
+    ('C', 4);
+    ('D', 4);
+    ('E', 4);
+    ('F', 4);
+    ('G', 4);
+    ('H', 4);
+    ('A', 5);
+    ('B', 5);
+    ('C', 5);
+    ('D', 5);
+    ('E', 5);
+    ('F', 5);
+    ('G', 5);
+    ('H', 5);
+    ('A', 6);
+    ('B', 6);
+    ('C', 6);
+    ('D', 6);
+    ('E', 6);
+    ('F', 6);
+    ('G', 6);
+    ('H', 6);
+    ('A', 7);
+    ('B', 7);
+    ('C', 7);
+    ('D', 7);
+    ('E', 7);
+    ('F', 7);
+    ('G', 7);
+    ('H', 7);
+    ('A', 8);
+    ('B', 8);
+    ('C', 8);
+    ('D', 8);
+    ('E', 8);
+    ('F', 8);
+    ('G', 8);
+    ('H', 8);
+  ]
+
+let rec get_all_open_pos board color pos =
+  match pos with
+  | (c, r) :: t ->
+      if check_if_occupied_Jack board c r color then
+        get_all_open_pos board color t
+      else [ (c, r) ] @ get_all_open_pos board color t
+  | [] -> []
+
+let temp_board board piece col row color =
+  let new_piece = { piece with column = col; row } in
+  let board_without_piece = remove_piece board piece.column piece.row in
+  match get_piece board col row with
+  | None -> Some (new_piece :: board_without_piece)
+  | Some captured_piece ->
+      if captured_piece.color = piece.color then None
+      else
+        Some
+          (new_piece
+          :: remove_piece board_without_piece captured_piece.column
+               captured_piece.row)
+
+let rec is_any_mates board piece pos color =
+  match pos with
+  | (c, r) :: t ->
+      if check_valid_move board piece c r then
+        is_check (contents (temp_board board piece c r piece.color)) color
+        && is_any_mates board piece t color
+      else is_any_mates board piece t color
+  | [] -> true
+
+let rec mate_with_block oboard (board : board) color =
+  let open_pos = get_all_open_pos oboard color all_pos in
+  match board with
+  | h :: t ->
+      if h.color = color && h.piece_type != King then
+        is_any_mates oboard h open_pos color && mate_with_block oboard t color
+      else mate_with_block oboard t color
+  | [] -> true
+
 (** [is_mate board color (col,row)] returns a boolean on whether the [color] king is in checkmate *)
 let is_mate (board : board) (color : color) =
-  let k = get_king board color in
-  mated (get_k_moves board color (k.column, k.row) []) board color
+  let c = if color = Black then White else Black in
+  let k = get_king board c in
+  mated
+    (let i = get_k_moves board c (k.column, k.row) [ (k.column, k.row) ] in
+     let _ = print_endline (print_k_move i "") in
+     i)
+    board c && mate_with_block board board c
 
-let contents (opt : board option) = match opt with Some x -> x | None -> []
+
+
+let update_board board piece col row color =
+  let new_piece = { piece with column = col; row } in
+  let board_without_piece = remove_piece board piece.column piece.row in
+  match get_piece board col row with
+  | None -> (
+      match is_mate (new_piece :: board_without_piece) color with
+      | true ->
+          let x = print_color color ^ " Wins" in
+          let _ = print_endline x in
+          raise CheckMate
+      | false -> Some (new_piece :: board_without_piece))
+  | Some captured_piece -> (
+      if captured_piece.color = piece.color then None
+      else
+        match
+          is_mate
+            (new_piece
+            :: remove_piece board_without_piece captured_piece.column
+                 captured_piece.row)
+            color
+        with
+        | true ->
+            let x = print_color color ^ " Wins" in
+            let _ = print_endline x in
+            raise CheckMate
+        | false ->
+            Some
+              (new_piece
+              :: remove_piece board_without_piece captured_piece.column
+                   captured_piece.row))
 
 let move_piece (board : board) (piece : piece) (col : char) (row : int)
     (can_castle_left : bool) (can_castle_right : bool) : board option =
@@ -462,12 +625,10 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
   else if
     check_valid_piece_on_board board board piece col row
     && not
-         (let i =
-            is_check (contents (update_board board piece col row)) piece.color
-          in
-          let _ = print_endline (string_of_bool i) in
-          i)
-  then update_board board piece col row
+         (is_check
+            (contents (update_board board piece col row piece.color))
+            piece.color)
+  then update_board board piece col row piece.color
   else None
 
 (* TODO: Add exception type for invalid moves? *)
