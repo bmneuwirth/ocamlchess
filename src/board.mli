@@ -93,7 +93,7 @@ list of squares that [piece] takes in its path from [(start_col, start_row)] to
 val check_each_square : board -> (char * int) list -> bool
 (** [check_each_square board lst] checks if each square in [lst] is occupied. 
   If none are occupied, returns true. If at least one square is occupied, 
-returns false. *)
+returns false.*)
 
 val check_btwn_squares : board -> piece -> char -> int -> bool
 (** [check_pawn_btwn_squares board piece c i] checks if all the squares in the 
