@@ -568,11 +568,7 @@ let rec mate_with_block oboard (board : board) color =
 let is_mate (board : board) (color : color) =
   let c = if color = Black then White else Black in
   let k = get_king board c in
-  mated
-    (let i = get_k_moves board c (k.column, k.row) [ (k.column, k.row) ] in
-     let _ = print_endline (print_k_move i "") in
-     i)
-    board c
+  mated (get_k_moves board c (k.column, k.row) [ (k.column, k.row) ]) board c
   && mate_with_block board board c
 
 let update_board board piece col row color =

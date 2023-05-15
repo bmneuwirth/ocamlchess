@@ -121,6 +121,9 @@ val is_check : board -> color -> bool
 (** [is_check board color] returns boolean on whether the [color] king is in 
 check or not on the [board] *)
 
+val is_mate : board -> color -> bool
+(** [is_mate board color] returns boolean on whether the [color] king is mated or not on the [board] *)
+
 val move : board -> char -> int -> char -> int -> bool -> bool -> board option
 (** [move board c1 i1 c2 i2 b1 b2] returns a board after applying the given move.
     The move is represented by [c1 i1 c2 i2], where c1i1 is the location of the
