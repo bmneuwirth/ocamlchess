@@ -16,12 +16,20 @@ let rec game_loop cur_state =
         should_promote
       then print_status cur_state "Invalid: please enter promotion.\n"
       else
-        let new_state_opt =
-          State.move start_col start_row end_col end_row cur_state
-        in
-        match new_state_opt with
-        | None -> print_status cur_state "Invalid move.\n"
-        | Some state -> print_status state "")
+        try
+          let new_state_opt =
+            State.move start_col start_row end_col end_row cur_state
+          in
+          match new_state_opt with
+          | None -> print_status cur_state "Invalid move.\n"
+          | Some state -> print_status state ""
+        with Board.Checkmate (col, b) ->
+          Board.print_board b;
+          let col_string = if col = Black then "Black" else "White" in
+          ANSITerminal.print_string [ ANSITerminal.red ]
+            ("Checkmate. " ^ col_string ^ " wins!\n");
+          print_endline "Thanks for playing!\n";
+          exit 0)
   | Promote piece_type ->
       if should_promote then
         let new_state =

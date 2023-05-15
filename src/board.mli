@@ -1,11 +1,15 @@
 exception King_not_found
 (** Raised when the King is not found on the board. *)
 
-exception CheckMate
-(** Raised when checkmate is reached. *)
-
 (** The type [color] represents the color of a particular piece. *)
 type color = Black | White
+
+type board
+(** The type [board] represents all of the pieces on the chess board. *)
+
+exception Checkmate of color * board
+(** Raised when checkmate is reached with [color] winning and [board] being 
+    the board with checkmate. *)
 
 (** The type [piece_type] represents the type of a particular piece. *)
 type piece_type = Pawn | Knight | Bishop | Rook | Queen | King
@@ -18,9 +22,6 @@ type piece = {
 }
 (** The type [piece] represents a particular piece on the board, including its
 type, color, and position. *)
-
-type board
-(** The type [board] represents all of the pieces on the chess board. *)
 
 val init_board : board
 (** [init_board] returns the initial chess board at the start of a game. *)
