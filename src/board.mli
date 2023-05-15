@@ -112,6 +112,11 @@ val check_valid_piece_on_board : board -> board -> piece -> char -> int -> bool
 whether moving [piece] to column [c] and row [i] is a legal move or not. 
 Returns true if the move is legal, and returns false if the move is not legal. *)
 
+val is_capture : board -> piece -> char -> int -> bool
+(** [is_captured board piece col row] is a boolean that returns true if 
+  moving [piece] to column [col] and row [row] would result in a capture, 
+returns false if not. *)
+
 val is_check : board -> color -> bool
 (** [is_check board color] returns boolean on whether the [color] king is in 
 check or not on the [board] *)
