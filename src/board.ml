@@ -95,7 +95,8 @@ let get_piece_color b col row =
 let remove_piece b col row =
   List.filter (fun x -> not (x.column = col && x.row = row)) b
 
-  let contents (opt : board option) = match opt with Some x -> x | None -> []
+let contents (opt : board option) = match opt with Some x -> x | None -> []
+
 (** [print_piece_char b col row] prints the character representing the piece on
    board b at row r and col c, where row and col are both ints. *)
 let print_piece_char b col row =
@@ -220,9 +221,6 @@ let check_if_occupied_Jack (board : board) (c : char) (i : int) (color : color)
   | Some piece when piece.color = color -> true
   | _ -> false
 
-(** [next_square piece (start_col, start_row) (end_col, end_row)] returns the 
-      next square in the path from [(start_col, start_row)] to [(end_col, end_row)] 
-      depending on the piece_type of [piece]. *)
 let check_if_occupied (board : board) (c : char) (i : int) : bool =
   match get_piece board c i with Some piece -> true | None -> false
 
@@ -373,7 +371,14 @@ let rec checked (oboard : board) (board : board) (color : color)
       if
         h.color != color
         &&
-        check_valid_move oboard h col row 
+        let f = check_valid_move oboard h col row in
+        let _ =
+          print_endline
+            (string_of_bool f ^ print_color color ^ print_color h.color
+           ^ Char.escaped h.column ^ string_of_int h.row ^ Char.escaped col
+           ^ string_of_int row)
+        in
+        f
       then true
       else checked oboard t color (col, row)
 
@@ -564,10 +569,11 @@ let is_mate (board : board) (color : color) =
   let c = if color = Black then White else Black in
   let k = get_king board c in
   mated
-    (get_k_moves board c (k.column, k.row) [ (k.column, k.row) ])
-    board c && mate_with_block board board c
-
-
+    (let i = get_k_moves board c (k.column, k.row) [ (k.column, k.row) ] in
+     let _ = print_endline (print_k_move i "") in
+     i)
+    board c
+  && mate_with_block board board c
 
 let update_board board piece col row color =
   let new_piece = { piece with column = col; row } in

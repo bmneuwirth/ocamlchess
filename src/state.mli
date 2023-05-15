@@ -33,4 +33,15 @@ val print_command : state -> unit
 
        Effects: returns a board with the given piece moved. *) *)
 
+val string_of_piece : piece -> string
+(** [string_of_piece p] returns a string representation of [p], depending on 
+the piece_type of p. *)
+
+val string_of_piece_list : piece list -> string
+(** [string_of_piece list lst] returns a string representation of [lst], where
+[lst] is a list of pieces. *)
+
 val print_captured_pieces : piece list -> piece list -> unit
+(** [print_captured_pieces pieces_captured_by_white pieces_captured_by_black]
+prints [pieces_captured_by_white] and [pieces_captured_by_black] to the user. 
+*)

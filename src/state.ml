@@ -151,15 +151,15 @@ let string_of_piece (p : piece) : string =
   | King -> "King"
   | Rook -> "Rook"
 
-let piece_list_to_string (lst : piece list) = string_of_list string_of_piece lst
+let string_of_piece_list (lst : piece list) = string_of_list string_of_piece lst
 
 let print_captured_by_white (lst : piece list) =
   ANSITerminal.print_string [ ANSITerminal.black ]
-    (piece_list_to_string lst ^ " \n")
+    (string_of_piece_list lst ^ " \n")
 
 let print_captured_by_black (lst : piece list) =
   ANSITerminal.print_string [ ANSITerminal.white ]
-    (piece_list_to_string lst ^ " \n")
+    (string_of_piece_list lst ^ " \n")
 
 let print_captured_pieces (captured_by_white : piece list)
     (captured_by_black : piece list) =
