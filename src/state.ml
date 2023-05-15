@@ -155,14 +155,15 @@ let piece_list_to_string (lst : piece list) = string_of_list string_of_piece lst
 
 let print_captured_by_white (lst : piece list) =
   ANSITerminal.print_string [ ANSITerminal.black ]
-    ("Pieces captured by White: " ^ piece_list_to_string lst)
+    (piece_list_to_string lst ^ " \n")
 
 let print_captured_by_black (lst : piece list) =
   ANSITerminal.print_string [ ANSITerminal.white ]
-    ("Pieces captured by Black: " ^ piece_list_to_string lst)
+    (piece_list_to_string lst ^ " \n")
 
 let print_captured_pieces (captured_by_white : piece list)
     (captured_by_black : piece list) =
+  print_endline "Captured: ";
   print_captured_by_white captured_by_white;
   print_captured_by_black captured_by_black
 
