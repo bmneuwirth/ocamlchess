@@ -8,7 +8,7 @@ let rec game_loop cur_state =
   | exception Command.Empty -> print_status cur_state "Invalid command.\n"
   | exception Command.Invalid -> print_status cur_state "Invalid command.\n"
   | Quit ->
-      print_endline "Thanks for playing!\n";
+      print_endline "Thanks for playing!";
       exit 0
   | Move { start_col; start_row; end_col; end_row } -> (
       if
@@ -28,7 +28,7 @@ let rec game_loop cur_state =
           let col_string = if col = Black then "Black" else "White" in
           ANSITerminal.print_string [ ANSITerminal.red ]
             ("Checkmate. " ^ col_string ^ " wins!\n");
-          print_endline "Thanks for playing!\n";
+          print_endline "Thanks for playing!";
           exit 0)
   | Promote piece_type ->
       if should_promote then

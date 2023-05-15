@@ -26,6 +26,9 @@ type, color, and position. *)
 val init_board : board
 (** [init_board] returns the initial chess board at the start of a game. *)
 
+val piece_type_to_str : piece_type -> string
+(** [piece_type_to_str p] returns the string representing a piece type [p]. *)
+
 val get_piece : board -> char -> int -> piece option
 (** [get_piece b col row] returns the piece on board [b] at row [r] and col [c],
    where row is a int and col is a char. *)

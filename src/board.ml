@@ -74,15 +74,14 @@ let col_int_to_char col = Char.chr (col + Char.code 'A' - 1)
 (** [col_char_to_int col] returns the int representing column [col]. *)
 let col_char_to_int col = Char.code col - Char.code 'A' + 1
 
-(** [piece_type_to_char p] returns the character representing a piece type [p]. *)
-let piece_type_to_char p =
+let piece_type_to_str p =
   match p with
-  | Pawn -> 'P'
-  | Rook -> 'R'
-  | Knight -> 'N'
-  | Bishop -> 'B'
-  | Queen -> 'Q'
-  | King -> 'K'
+  | Pawn -> "♙"
+  | Rook -> "♖"
+  | Knight -> "♘"
+  | Bishop -> "♗"
+  | Queen -> "♕"
+  | King -> "♔"
 
 let get_piece b col row =
   List.find_opt (fun x -> x.column = col && x.row = row) b
@@ -109,8 +108,7 @@ let print_piece_char b col row =
         if piece.color = White then [ ANSITerminal.white ]
         else [ ANSITerminal.black ]
       in
-      ANSITerminal.print_string color
-        (String.make 1 (piece_type_to_char piece.piece_type))
+      ANSITerminal.print_string color (piece_type_to_str piece.piece_type)
 
 let print_board b =
   print_char '\n';
@@ -570,7 +568,8 @@ let try_castle (board : board) (piece : piece) (col : char) (row : int)
     let new_king = { piece with column = col; row } in
     let new_rook = { rook with column = rook_dest; row } in
     let updated_board = Some (new_king :: new_rook :: board_without_pieces) in
-    if is_left then
+    if is_check board piece.color then None
+    else if is_left then
       let first_board_move = update_board board piece 'D' row piece.color in
       if first_board_move = None then None
       else if is_check (Option.get first_board_move) piece.color then None
