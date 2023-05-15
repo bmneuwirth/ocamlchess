@@ -151,11 +151,12 @@ let string_of_piece (p : piece) : string =
   | King -> "King"
   | Rook -> "Rook"
 
-let string_of_piece_list (lst : piece list) = string_of_list string_of_piece lst
+let string_of_piece_list (lst : piece list) =
+  string_of_list Board.piece_type_to_str (List.map (fun x -> x.piece_type) lst)
 
 let print_captured_by_white (lst : piece list) =
   ANSITerminal.print_string [ ANSITerminal.black ]
-    (string_of_piece_list lst ^ " \n")
+    (string_of_piece_list lst ^ " ")
 
 let print_captured_by_black (lst : piece list) =
   ANSITerminal.print_string [ ANSITerminal.white ]
