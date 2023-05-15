@@ -220,15 +220,12 @@ let check_if_occupied_Jack (board : board) (c : char) (i : int) (color : color)
   | Some piece when piece.color = color -> true
   | _ -> false
 
-<<<<<<< HEAD
 (** [next_square piece (start_col, start_row) (end_col, end_row)] returns the 
       next square in the path from [(start_col, start_row)] to [(end_col, end_row)] 
       depending on the piece_type of [piece]. *)
 let check_if_occupied (board : board) (c : char) (i : int) : bool =
   match get_piece board c i with Some piece -> true | None -> false
 
-=======
->>>>>>> newbranch
 let next_square piece (start_col, start_row) (end_col, end_row) =
   match piece.piece_type with
   | Pawn ->
