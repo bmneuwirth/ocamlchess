@@ -8,6 +8,8 @@ type state = {
   white_state : player_state;
   black_state : player_state;
   can_promote : bool;
+  pieces_captured_by_white : piece list;
+  pieces_captured_by_black : piece list;
 }
 
 let init_player_state = { can_castle_left = true; can_castle_right = true }
@@ -19,12 +21,14 @@ let init_state =
     white_state = init_player_state;
     black_state = init_player_state;
     can_promote = false;
+    pieces_captured_by_white = [];
+    pieces_captured_by_black = [];
   }
 
 (** [update_state board cur_state piece] updates the state based on new board 
     [board], previous state [cur_state], original piece that was moved 
     [piece], and destination row of the move [end_row]*)
-let update_state board cur_state piece end_row =
+let update_state board cur_state piece end_row (captured_piece : piece option) =
   let { color = cur_color; black_state; white_state } = cur_state in
   let gen_new_state new_color player_state =
     let new_state =
@@ -34,6 +38,21 @@ let update_state board cur_state piece end_row =
         color = new_color;
         can_promote = piece.piece_type = Pawn && (end_row = 1 || end_row = 8);
       }
+    in
+    let new_state_captures =
+      match captured_piece with
+      | None -> new_state
+      | Some p ->
+          if p.color = Black then
+            {
+              new_state with
+              pieces_captured_by_white = p :: new_state.pieces_captured_by_white;
+            }
+          else
+            {
+              new_state with
+              pieces_captured_by_black = p :: new_state.pieces_captured_by_black;
+            }
     in
     let player_state =
       {
@@ -45,8 +64,9 @@ let update_state board cur_state piece end_row =
           && not (piece.piece_type = Rook && piece.column = 'H');
       }
     in
-    if new_color = White then { new_state with black_state = player_state }
-    else { new_state with white_state = player_state }
+    if new_color = White then
+      { new_state_captures with black_state = player_state }
+    else { new_state_captures with white_state = player_state }
   in
   Some
     (if cur_color = Black then gen_new_state White black_state
@@ -71,7 +91,15 @@ let move start_col start_row end_col end_row (cur_state : state) =
           Board.move board start_col start_row end_col end_row can_castle_left
             can_castle_right
         with
-        | Some board -> update_state board cur_state piece end_row
+        | Some aboard ->
+            if
+              Board.is_capture board
+                Board.(get_piece board start_col start_row |> Option.get)
+                end_col end_row
+            then
+              update_state aboard cur_state piece end_row
+                Board.(get_piece board end_col end_row)
+            else update_state aboard cur_state piece end_row None
         | None -> None)
   | None -> None
 
@@ -98,6 +126,46 @@ let print_command { board; color; white_state; black_state; can_promote } =
     print_endline
       "Input your command: [move [start position] [end position]] or [quit]. \
        Ex: [move d2 d3]"
+
+(* from A3 *)
+let string_of_list ?(open_delim = "[") ?(close_delim = "]") ?(sep = "; ")
+    string_of_elt lst =
+  let len = List.length lst in
+  let open Buffer in
+  let buf = create (3 * len) in
+  add_string buf open_delim;
+  List.iteri
+    (fun i v ->
+      add_string buf (string_of_elt v);
+      if i < len - 1 then add_string buf sep)
+    lst;
+  add_string buf close_delim;
+  contents buf
+
+let string_of_piece (p : piece) : string =
+  match p.piece_type with
+  | Pawn -> "Pawn"
+  | Bishop -> "Bishop"
+  | Knight -> "Knight"
+  | Queen -> "Queen"
+  | King -> "King"
+  | Rook -> "Rook"
+
+let piece_list_to_string (lst : piece list) = string_of_list string_of_piece lst
+
+let print_captured_by_white (lst : piece list) =
+  ANSITerminal.print_string [ ANSITerminal.black ]
+    (piece_list_to_string lst ^ " \n")
+
+let print_captured_by_black (lst : piece list) =
+  ANSITerminal.print_string [ ANSITerminal.white ]
+    (piece_list_to_string lst ^ " \n")
+
+let print_captured_pieces (captured_by_white : piece list)
+    (captured_by_black : piece list) =
+  print_endline "Captured: ";
+  print_captured_by_white captured_by_white;
+  print_captured_by_black captured_by_black
 
 (* let remove_piece board piece = List.filter (fun x -> x != piece) board
 
