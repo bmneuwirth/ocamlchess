@@ -114,7 +114,7 @@ let print_command { board; color; white_state; black_state; can_promote } =
     in
     print_endline
       "Choose a piece type to promote the pawn to: [promote [piece type]] or \
-       [quit]. Ex: [promote q]"
+       [quit], where [piece type] is Q, N, R, or B. Ex: [promote Q]"
   else
     let _ =
       match color with
