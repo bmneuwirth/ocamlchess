@@ -525,9 +525,11 @@ let rec mate_with_block oboard (board : board) color =
 (** [is_mate board color (col,row)] returns a boolean on whether the [color] king is in checkmate *)
 let is_mate (board : board) (color : color) =
   let c = if color = Black then White else Black in
-  let k = get_king board c in
-  mated (get_k_moves board c (k.column, k.row) [ (k.column, k.row) ]) board c
-  && mate_with_block board board c
+  try
+    let k = get_king board c in
+    mated (get_k_moves board c (k.column, k.row) [ (k.column, k.row) ]) board c
+    && mate_with_block board board c
+  with King_not_found -> true
 
 let update_board board piece col row color =
   let new_piece = { piece with column = col; row } in
@@ -605,15 +607,14 @@ let move_piece (board : board) (piece : piece) (col : char) (row : int)
   else if
     initial_king_move && col = 'G' && row = initial_king_row && can_castle_right
   then try_castle board piece col row false
-  else
+  else if check_valid_piece_on_board board board piece col row then
     let updated_board =
       contents (update_board board piece col row piece.color)
     in
-    if
-      check_valid_piece_on_board board board piece col row
-      && (updated_board = [] || not (is_check updated_board piece.color))
-    then update_board board piece col row piece.color
+    if updated_board = [] || not (is_check updated_board piece.color) then
+      update_board board piece col row piece.color
     else None
+  else None
 
 (* TODO: Add exception type for invalid moves? *)
 (* TODO: Castling needs check checker to make sure it's a valid move (check
