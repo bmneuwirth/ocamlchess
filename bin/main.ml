@@ -45,9 +45,10 @@ let rec game_loop cur_state =
 (** [print_status state msg] prints the current status of the game using the 
     state and an optional additional message [msg]. *)
 and print_status cur_state msg =
-  let { board; color; _ } = cur_state in
-  Board.print_board board;
+  Board.print_board cur_state.board;
   if msg <> "" then ANSITerminal.print_string [ ANSITerminal.red ] msg;
+  State.print_captured_pieces cur_state.pieces_captured_by_white
+    cur_state.pieces_captured_by_black;
   State.print_command cur_state;
   game_loop cur_state
 

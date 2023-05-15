@@ -9,6 +9,8 @@ type state = {
   white_state : player_state;
   black_state : player_state;
   can_promote : bool;
+  pieces_captured_by_white : piece list;
+  pieces_captured_by_black : piece list;
 }
 (** The type [state] represents state information of the game, including the board,
     the color whose turn it is, individual white and black player states, and
@@ -34,3 +36,5 @@ val print_command : state -> unit
        - Precondition: The move was already check to be valid.
 
        Effects: returns a board with the given piece moved. *) *)
+
+val print_captured_pieces : piece list -> piece list -> unit

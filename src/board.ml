@@ -260,10 +260,6 @@ let next_square piece (start_col, start_row) (end_col, end_row) =
   | King -> failwith "Should never occur"
   | Knight -> failwith "Should never occur"
 
-(** [find_path board piece (start_col, start_row) (end_col, end_row)] returns 
-  the list of squares that would be traveled in the path of [piece] from 
-  [(start_col, start_row)] to [(end_col, end_row)].*)
-
 let rec find_path board piece (start_col, start_row) (end_col, end_row) =
   match (start_col, start_row) with
   | x, y when x = end_col && y = end_row -> []
@@ -273,9 +269,6 @@ let rec find_path board piece (start_col, start_row) (end_col, end_row) =
            (next_square piece (start_col, start_row) (end_col, end_row))
            (end_col, end_row)
 
-(** [check_each_square board lst] checks every square in list, returns true if
-  every square is not occupied, returns false if at least one square is 
-    occupied. *)
 let rec check_each_square board lst =
   match lst with
   | [] -> true
@@ -315,6 +308,12 @@ let rec check_valid_piece_on_board (oboard : board) (board : board)
          && h.row = piece.row ->
       check_valid_move oboard piece c i
   | _ :: t -> check_valid_piece_on_board oboard t piece c i
+
+let is_capture (board : board) (piece : piece) (col : char) (row : int) : bool =
+  match get_piece board col row with
+  | Some captured_piece ->
+      if captured_piece.color <> piece.color then true else false
+  | None -> false
 
 let rec checked (oboard : board) (board : board) (color : color)
     ((col, row) : char * int) =
@@ -532,11 +531,7 @@ let rec mate_with_block oboard (board : board) color =
 let is_mate (board : board) (color : color) =
   let c = if color = Black then White else Black in
   let k = get_king board c in
-  mated
-    (let i = get_k_moves board c (k.column, k.row) [ (k.column, k.row) ] in
-     let _ = print_endline (print_k_move i "") in
-     i)
-    board c
+  mated (get_k_moves board c (k.column, k.row) [ (k.column, k.row) ]) board c
   && mate_with_block board board c
 
 let update_board board piece col row color =
