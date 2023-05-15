@@ -368,18 +368,7 @@ let rec checked (oboard : board) (board : board) (color : color)
   match board with
   | [] -> false
   | h :: t ->
-      if
-        h.color != color
-        &&
-        let f = check_valid_move oboard h col row in
-        let _ =
-          print_endline
-            (string_of_bool f ^ print_color color ^ print_color h.color
-           ^ Char.escaped h.column ^ string_of_int h.row ^ Char.escaped col
-           ^ string_of_int row)
-        in
-        f
-      then true
+      if h.color != color && check_valid_move oboard h col row then true
       else checked oboard t color (col, row)
 
 let is_check (board : board) (color : color) =
