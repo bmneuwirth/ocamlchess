@@ -58,6 +58,14 @@ let move_test (name : string) (state : state) (start_col : char)
             .board at_col at_row))
       .piece_type
 
+let checkmate_test (name : string) (state : state) (start_col : char)
+    (start_row : int) (end_col : char) (end_row : int) (color : Board.color)
+    (board : Board.board) =
+  name >:: fun _ ->
+  assert_raises
+    (Board.Checkmate (color, board))
+    (fun () -> State.move start_col start_row end_col end_row state)
+
 (** [invalid_move_test name state start_col start_row end_col end_row] constructs an OUnit test named
     [name] that asserts the quality of [None] with
     [move state start_col start_row end_col end_row]. *)
@@ -544,6 +552,10 @@ let test_38_state = test_37_state |> State.move 'F' 8 'E' 7 |> Option.get
 let test_39_state = test_38_state |> State.move 'E' 1 'E' 7 |> Option.get
 let test_40_state = test_39_state |> State.move 'C' 8 'B' 8 |> Option.get
 
+let checkmate_board =
+  try (test_40_state |> State.move 'C' 6 'C' 7 |> Option.get).board
+  with Board.Checkmate (col, board) -> board
+
 let random_game_2_tests =
   [
     move_test "generated test 0 from actual game 2" test_0_state 'E' 2 'E' 4
@@ -626,8 +638,8 @@ let random_game_2_tests =
       Rook 'E' 7;
     move_test "generated test 39 from actual game 2" test_39_state 'C' 8 'B' 8
       King 'B' 8;
-    move_test "generated test 40 from actual game 2" test_40_state 'C' 6 'C' 7
-      Queen 'C' 7;
+    checkmate_test "generated test 40 from actual game 2" test_40_state 'C' 6
+      'C' 7 White checkmate_board;
   ]
 
 let test_0_state = State.init_state
@@ -685,6 +697,10 @@ let test_51_state = test_50_state |> State.move 'A' 2 'A' 4 |> Option.get
 let test_52_state = test_51_state |> State.move 'D' 8 'C' 7 |> Option.get
 let test_53_state = test_52_state |> State.move 'H' 3 'G' 5 |> Option.get
 let test_54_state = test_53_state |> State.move 'C' 7 'G' 3 |> Option.get
+
+let checkmate_board =
+  try (test_54_state |> State.move 'H' 6 'H' 7 |> Option.get).board
+  with Board.Checkmate (col, board) -> board
 
 let random_game_3_tests =
   [
@@ -796,8 +812,8 @@ let random_game_3_tests =
       Knight 'G' 5;
     move_test "generated test 53 from actual game 3" test_53_state 'C' 7 'G' 3
       Bishop 'G' 3;
-    move_test "generated test 54 from actual game 3" test_54_state 'H' 6 'H' 7
-      Queen 'H' 7;
+    checkmate_test "generated test 54 from actual game 3" test_54_state 'H' 6
+      'H' 7 White checkmate_board;
   ]
 
 let test_0_state = State.init_state
@@ -866,6 +882,10 @@ let test_62_state = test_61_state |> State.move 'G' 4 'G' 2 |> Option.get
 let test_63_state = test_62_state |> State.move 'F' 2 'F' 1 |> Option.get
 let test_64_state = test_63_state |> State.move 'E' 4 'F' 3 |> Option.get
 let test_65_state = test_64_state |> State.move 'F' 1 'E' 1 |> Option.get
+
+let checkmate_board =
+  try (test_65_state |> State.move 'F' 3 'F' 2 |> Option.get).board
+  with Board.Checkmate (col, board) -> board
 
 let random_game_4_tests =
   [
@@ -999,8 +1019,8 @@ let random_game_4_tests =
       Queen 'F' 3;
     move_test "generated test 64 from actual game 4" test_64_state 'F' 1 'E' 1
       King 'E' 1;
-    move_test "generated test 65 from actual game 4" test_65_state 'F' 3 'F' 2
-      Queen 'F' 2;
+    checkmate_test "generated test 65 from actual game 4" test_65_state 'F' 3
+      'F' 2 Black checkmate_board;
   ]
 
 let test_0_state = State.init_state
