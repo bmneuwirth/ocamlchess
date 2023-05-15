@@ -374,14 +374,7 @@ let rec checked (oboard : board) (board : board) (color : color)
       if
         h.color != color
         &&
-        let f = check_valid_move oboard h col row in
-        let _ =
-          print_endline
-            (string_of_bool f ^ print_color color ^ print_color h.color
-           ^ Char.escaped h.column ^ string_of_int h.row ^ Char.escaped col
-           ^ string_of_int row)
-        in
-        f
+        check_valid_move oboard h col row 
       then true
       else checked oboard t color (col, row)
 
@@ -572,9 +565,7 @@ let is_mate (board : board) (color : color) =
   let c = if color = Black then White else Black in
   let k = get_king board c in
   mated
-    (let i = get_k_moves board c (k.column, k.row) [ (k.column, k.row) ] in
-     let _ = print_endline (print_k_move i "") in
-     i)
+    (get_k_moves board c (k.column, k.row) [ (k.column, k.row) ])
     board c && mate_with_block board board c
 
 
