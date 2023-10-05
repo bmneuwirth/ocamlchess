@@ -9,6 +9,7 @@ Requires [OPAM](https://opam.ocaml.org/doc/Install.html).
 3. Install ANSITerminal with [opam install ANSITerminal].
 4. Run [make play].
 
+![Image of chess in action](https://i.imgur.com/zYun9gq.png)
 ### Contributors
 Christopher Cheng - netid: cdc236
 Jesse Cheng - netid: jc2755
